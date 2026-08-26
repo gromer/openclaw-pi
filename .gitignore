@@ -1,0 +1,13 @@
+.DS_Store
+.venv/
+.cache/
+*.retry
+*.log
+inventories/production/*
+!inventories/production/README.md
+secrets.plain.yaml
+*.dec.yaml
+*.agekey
+age-identity.txt
+.env
+compose/searxng/.env

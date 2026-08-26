@@ -1,0 +1,11 @@
+---
+- name: Restart docker
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+- name: Restart OpenClaw
+  ansible.builtin.service:
+    name: openclaw
+    state: restarted
+  failed_when: false
+

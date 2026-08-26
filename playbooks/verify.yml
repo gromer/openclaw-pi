@@ -1,0 +1,6 @@
+---
+- name: Verify OpenClaw gateway
+  hosts: all
+  become: true
+  roles: [verification]
+

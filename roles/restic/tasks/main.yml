@@ -1,0 +1,41 @@
+---
+- name: Install Restic
+  ansible.builtin.apt:
+    name: restic
+    state: present
+  when: restic_enabled
+- name: Create Restic configuration directory
+  ansible.builtin.file:
+    path: /etc/restic
+    state: directory
+    mode: '0700'
+  when: restic_enabled
+- name: Install protected Restic environment
+  ansible.builtin.template:
+    src: restic.env.j2
+    dest: "{{ restic_environment_path }}"
+    mode: '0600'
+  no_log: true
+  when: restic_enabled
+- name: Install Restic units and helpers
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - {src: backup.service.j2, dest: /etc/systemd/system/openclaw-backup.service, mode: '0644'}
+    - {src: backup.timer.j2, dest: /etc/systemd/system/openclaw-backup.timer, mode: '0644'}
+    - {src: check.service.j2, dest: /etc/systemd/system/openclaw-backup-check.service, mode: '0644'}
+    - {src: check.timer.j2, dest: /etc/systemd/system/openclaw-backup-check.timer, mode: '0644'}
+    - {src: backup.sh.j2, dest: /usr/local/sbin/openclaw-backup, mode: '0750'}
+  when: restic_enabled
+  notify: Reload systemd
+- name: Enable Restic timers
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop: [openclaw-backup.timer, openclaw-backup-check.timer]
+  when: restic_enabled
+

@@ -1,0 +1,22 @@
+---
+- name: Create sandbox image build directory
+  ansible.builtin.file:
+    path: /usr/local/share/openclaw-sandbox
+    state: directory
+    mode: '0755'
+- name: Install sandbox Dockerfile
+  ansible.builtin.copy:
+    src: Dockerfile
+    dest: /usr/local/share/openclaw-sandbox/Dockerfile
+    mode: '0644'
+  register: sandbox_dockerfile
+- name: Inspect sandbox image
+  ansible.builtin.command: "docker image inspect {{ sandbox_image }}"
+  register: sandbox_image_inspect
+  changed_when: false
+  failed_when: false
+- name: Build local sandbox image
+  ansible.builtin.command: "docker build --pull=false --tag {{ sandbox_image }} /usr/local/share/openclaw-sandbox"
+  when: sandbox_build_image and (sandbox_dockerfile.changed or sandbox_image_inspect.rc != 0)
+  changed_when: true
+

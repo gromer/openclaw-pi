@@ -1,0 +1,54 @@
+---
+pi_hostname: openclaw-pi
+pi_network_mode: dhcp
+pi_static_address: ""
+pi_static_gateway: ""
+pi_dns_servers: []
+pi_manage_network: false
+pi_network_connection: "Wired connection 1"
+admin_user: piadmin
+admin_groups: [sudo]
+admin_ssh_public_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXAMPLEONLYNOTAKEY replace@example
+openclaw_user: openclaw
+openclaw_group: openclaw
+openclaw_version: "2026.7.1"
+openclaw_state_dir: /var/lib/openclaw
+openclaw_workspace_dir: /var/lib/openclaw/workspace
+openclaw_config_path: /etc/openclaw/openclaw.json
+openclaw_gateway_port: 18789
+openclaw_gateway_bind: loopback
+node_major: "24"
+inference_backend: ollama
+inference_host: mac-inference.local
+inference_base_url: http://mac-inference.local:11434
+inference_model: qwen3.5:27b
+inference_context_window: 32768
+inference_max_tokens: 8192
+inference_timeout_seconds: 300
+secrets_file: ""
+sandbox_mode: all
+sandbox_scope: agent
+sandbox_workspace_access: none
+sandbox_image: openclaw-sandbox:bookworm-slim
+sandbox_network: none
+sandbox_memory: 1g
+sandbox_memory_swap: 1g
+sandbox_cpus: 1
+sandbox_pids_limit: 128
+sandbox_nofile_soft: 1024
+sandbox_nofile_hard: 2048
+searxng_image: >-
+  ghcr.io/searxng/searxng:2026.8.20-8d3dd0cd4@sha256:9fd6172d7dcec4920273995ccd33338e4cda3093a468261a479f46a2d212723b
+searxng_bind_address: 127.0.0.1
+searxng_port: 8888
+restic_enabled: false
+restic_repository: ""
+restic_backup_paths:
+  - /var/lib/openclaw
+restic_schedule: "*-*-* 03:30:00"
+restic_keep_daily: 7
+restic_keep_weekly: 5
+restic_keep_monthly: 12
+restic_check_schedule: "Sun *-*-* 04:30:00"
+restic_max_backup_age_hours: 36

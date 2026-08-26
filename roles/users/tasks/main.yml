@@ -1,0 +1,41 @@
+---
+- name: Create administrative user
+  ansible.builtin.user:
+    name: "{{ admin_user }}"
+    groups: "{{ admin_groups | join(',') }}"
+    append: true
+    shell: /bin/bash
+    create_home: true
+- name: Create administrator SSH directory
+  ansible.builtin.file:
+    path: "/home/{{ admin_user }}/.ssh"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: '0700'
+- name: Install administrator SSH keys
+  ansible.builtin.copy:
+    content: "{{ admin_ssh_public_keys | join('\n') }}\n"
+    dest: "/home/{{ admin_user }}/.ssh/authorized_keys"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: '0600'
+- name: Create OpenClaw service account
+  ansible.builtin.user:
+    name: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ openclaw_state_dir }}"
+    create_home: true
+- name: Create OpenClaw directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - {path: /etc/openclaw, owner: root, group: "{{ openclaw_group }}", mode: '0750'}
+    - {path: "{{ openclaw_state_dir }}", owner: "{{ openclaw_user }}", group: "{{ openclaw_group }}", mode: '0700'}
+    - {path: "{{ openclaw_workspace_dir }}", owner: "{{ openclaw_user }}", group: "{{ openclaw_group }}", mode: '0700'}

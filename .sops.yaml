@@ -1,0 +1,7 @@
+---
+# Replace this public recipient before creating a secrets file. This deliberately
+# invalid marker prevents anyone mistaking the repository for production-ready.
+creation_rules:
+  - path_regex: inventories/production/.*\.sops\.ya?ml$
+    age: REPLACE_WITH_YOUR_AGE_PUBLIC_RECIPIENT
+

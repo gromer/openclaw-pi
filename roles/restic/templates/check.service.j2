@@ -1,0 +1,7 @@
+[Unit]
+Description=Check OpenClaw Restic repository
+[Service]
+Type=oneshot
+EnvironmentFile={{ restic_environment_path }}
+ExecStart=/usr/bin/restic check --read-data-subset=5%%
+

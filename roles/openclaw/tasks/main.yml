@@ -1,0 +1,101 @@
+---
+- name: Install NodeSource repository for supported Node major
+  ansible.builtin.shell: |
+    set -eu
+    curl -fsSL https://deb.nodesource.com/setup_{{ node_major }}.x -o /tmp/nodesource-setup.sh
+    sh /tmp/nodesource-setup.sh
+    rm -f /tmp/nodesource-setup.sh
+  args:
+    creates: /etc/apt/sources.list.d/nodesource.list
+- name: Install Node.js
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+    update_cache: true
+- name: Check installed OpenClaw version
+  ansible.builtin.command: "{{ openclaw_npm_prefix }}/bin/openclaw --version"
+  register: openclaw_installed
+  changed_when: false
+  failed_when: false
+- name: Install pinned OpenClaw npm release
+  ansible.builtin.command: >-
+    npm install --global --prefix {{ openclaw_npm_prefix }}
+    --allow-scripts=openclaw openclaw@{{ openclaw_version }}
+  environment:
+    npm_config_update_notifier: "false"
+    npm_config_audit: "false"
+  when: openclaw_installed.rc != 0 or openclaw_version not in openclaw_installed.stdout
+  notify: Restart OpenClaw
+- name: Decrypt production secrets in memory
+  ansible.builtin.command: "sops --decrypt --output-type yaml {{ secrets_file }}"
+  delegate_to: localhost
+  become: false
+  register: decrypted_secrets
+  changed_when: false
+  no_log: true
+  when: secrets_file | length > 0
+- name: Parse secrets
+  ansible.builtin.set_fact:
+    openclaw_secrets: "{{ decrypted_secrets.stdout | from_yaml }}"
+  no_log: true
+  when: secrets_file | length > 0
+- name: Use empty secrets for validation-only example runs
+  ansible.builtin.set_fact:
+    openclaw_secrets: {}
+  when: secrets_file | length == 0
+- name: Validate required secrets
+  ansible.builtin.assert:
+    that:
+      - openclaw_secrets.gateway_token | default('') | length >= 32
+      - openclaw_secrets.searxng_secret_key | default('') | length >= 32
+      - not restic_enabled or openclaw_secrets.restic_password | default('') | length >= 20
+  no_log: true
+  when: secrets_file | length > 0
+- name: Install protected environment
+  ansible.builtin.template:
+    src: environment.j2
+    dest: "{{ openclaw_environment_path }}"
+    owner: root
+    group: "{{ openclaw_group }}"
+    mode: '0640'
+  no_log: true
+  notify: Restart OpenClaw
+- name: Render OpenClaw configuration
+  ansible.builtin.template:
+    src: openclaw.json.j2
+    dest: "{{ openclaw_config_path }}"
+    owner: root
+    group: "{{ openclaw_group }}"
+    mode: '0640'
+  notify: Restart OpenClaw
+- name: Check inference endpoint before service restart
+  ansible.builtin.uri:
+    url: "{{ inference_base_url }}{{ '/api/tags' if inference_backend == 'ollama' else '/models' }}"
+    status_code: 200
+    timeout: 10
+    headers: >-
+      {{ {'Authorization': 'Bearer ' + openclaw_secrets.inference_api_key}
+      if (openclaw_secrets.inference_api_key | default('') | length > 0) else {} }}
+  no_log: true
+- name: Install managed workspace files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ openclaw_workspace_dir }}/{{ item }}"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
+    mode: '0600'
+  loop: [AGENTS.md, SOUL.md, TOOLS.md]
+- name: Install hardened OpenClaw service
+  ansible.builtin.template:
+    src: openclaw.service.j2
+    dest: /etc/systemd/system/openclaw.service
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart OpenClaw
+- name: Enable OpenClaw
+  ansible.builtin.systemd_service:
+    name: openclaw
+    enabled: true
+    state: started
+    daemon_reload: true

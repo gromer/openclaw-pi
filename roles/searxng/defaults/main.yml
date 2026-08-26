@@ -1,0 +1,4 @@
+---
+searxng_compose_dir: /opt/openclaw-compose/searxng
+searxng_config_dir: /etc/searxng
+

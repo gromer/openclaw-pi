@@ -1,0 +1,23 @@
+---
+- name: Require Raspberry Pi OS ARM64 target
+  ansible.builtin.assert:
+    that:
+      - ansible_architecture in ['aarch64', 'arm64']
+      - ansible_distribution == 'Debian'
+      - pi_hostname | length > 0
+      - pi_network_mode in ['dhcp', 'static']
+      - not pi_manage_network or pi_network_connection | length > 0
+      - pi_network_mode != 'static' or (pi_static_address | length > 0 and pi_static_gateway | length > 0)
+      - admin_user != openclaw_user
+      - admin_ssh_public_keys | length > 0
+      - inference_backend in ['ollama', 'mlx_openai']
+      - inference_base_url is match('^https?://')
+      - inference_backend != 'mlx_openai' or inference_base_url is match('.*/v1/?$')
+      - inference_host | length > 0
+      - inference_model | length > 0
+      - sandbox_network == 'none'
+      - sandbox_workspace_access in ['none', 'ro']
+      - openclaw_gateway_bind == 'loopback'
+      - secrets_file | length > 0
+      - not restic_enabled or (restic_repository | length > 0 and secrets_file | length > 0)
+    fail_msg: Inventory violates a required platform or security invariant.

@@ -1,0 +1,56 @@
+---
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ pi_hostname }}"
+- name: Configure timezone
+  ansible.builtin.command: "timedatectl set-timezone {{ timezone }}"
+  register: timezone_result
+  changed_when: timezone_result.rc == 0 and ansible_date_time.tz != timezone
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+- name: Inspect active NetworkManager connection
+  ansible.builtin.command: >-
+    nmcli -g ipv4.method,ipv4.addresses,ipv4.gateway connection show {{ pi_network_connection }}
+  register: network_current
+  changed_when: false
+  when: pi_manage_network
+- name: Configure declared DHCP network settings
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - connection
+      - modify
+      - "{{ pi_network_connection }}"
+      - ipv4.method
+      - auto
+      - ipv4.addresses
+      - ""
+      - ipv4.gateway
+      - ""
+      - ipv4.dns
+      - "{{ pi_dns_servers | join(',') }}"
+  when: pi_manage_network and pi_network_mode == 'dhcp' and 'auto' not in network_current.stdout
+  notify: Activate network connection
+- name: Configure declared static network settings
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - connection
+      - modify
+      - "{{ pi_network_connection }}"
+      - ipv4.method
+      - manual
+      - ipv4.addresses
+      - "{{ pi_static_address }}"
+      - ipv4.gateway
+      - "{{ pi_static_gateway }}"
+      - ipv4.dns
+      - "{{ pi_dns_servers | join(',') }}"
+  when: >-
+    pi_manage_network and pi_network_mode == 'static' and
+    (pi_static_address not in network_current.stdout or pi_static_gateway not in network_current.stdout)
+  notify: Activate network connection

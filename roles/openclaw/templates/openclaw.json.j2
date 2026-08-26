@@ -1,0 +1,12 @@
+{
+  "gateway":{"mode":"local","bind":"{{ openclaw_gateway_bind }}","port":{{ openclaw_gateway_port }},"auth":{"mode":"token","token":"${OPENCLAW_GATEWAY_TOKEN}"}},
+  "models":{"mode":"merge","catalogRefresh":{"enabled":false},"providers":{
+{% if inference_backend == 'ollama' %}
+    "ollama":{"baseUrl":"{{ inference_base_url }}","apiKey":"ollama-local","api":"ollama","timeoutSeconds":{{ inference_timeout_seconds }},"models":[{"id":"{{ inference_model }}","name":"{{ inference_model }}","contextWindow":{{ inference_context_window }},"maxTokens":{{ inference_max_tokens }}}]}
+{% else %}
+    "{{ openclaw_provider_id }}":{"baseUrl":"{{ inference_base_url }}","apiKey":"${INFERENCE_API_KEY}","api":"openai-completions","timeoutSeconds":{{ inference_timeout_seconds }},"models":[{"id":"{{ inference_model }}","name":"{{ inference_model }}","reasoning":false,"input":["text"],"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0},"contextWindow":{{ inference_context_window }},"maxTokens":{{ inference_max_tokens }}}]}
+{% endif %}
+  }},
+  "agents":{"defaults":{"workspace":"{{ openclaw_workspace_dir }}","skipBootstrap":true,"model":{"primary":"{{ 'ollama' if inference_backend == 'ollama' else openclaw_provider_id }}/{{ inference_model }}"},"sandbox":{"mode":"{{ sandbox_mode }}","backend":"docker","scope":"{{ sandbox_scope }}","workspaceAccess":"{{ sandbox_workspace_access }}","docker":{"image":"{{ sandbox_image }}","readOnlyRoot":true,"tmpfs":["/tmp","/var/tmp","/run"],"network":"{{ sandbox_network }}","user":"1000:1000","capDrop":["ALL"],"pidsLimit":{{ sandbox_pids_limit }},"memory":"{{ sandbox_memory }}","memorySwap":"{{ sandbox_memory_swap }}","cpus":{{ sandbox_cpus }},"ulimits":{"nofile":{"soft":{{ sandbox_nofile_soft }},"hard":{{ sandbox_nofile_hard }}}}},"prune":{"idleHours":24,"maxAgeDays":7}}}}
+}
+

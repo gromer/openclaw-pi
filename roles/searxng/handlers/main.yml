@@ -1,0 +1,7 @@
+---
+- name: Restart SearXNG
+  ansible.builtin.command: docker compose -f compose.yml up -d --force-recreate
+  args:
+    chdir: "{{ searxng_compose_dir }}"
+  changed_when: true
+

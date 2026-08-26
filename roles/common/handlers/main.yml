@@ -1,0 +1,4 @@
+---
+- name: Activate network connection
+  ansible.builtin.command: "nmcli connection up {{ pi_network_connection }}"
+  changed_when: true

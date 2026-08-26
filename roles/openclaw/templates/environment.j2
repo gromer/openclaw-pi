@@ -1,0 +1,4 @@
+OPENCLAW_GATEWAY_TOKEN={{ openclaw_secrets.gateway_token | default('VALIDATION_ONLY_NOT_FOR_PRODUCTION') }}
+{% if openclaw_secrets.inference_api_key | default('') | length > 0 %}INFERENCE_API_KEY={{ openclaw_secrets.inference_api_key }}
+{% endif %}
+

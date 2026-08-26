@@ -1,0 +1,10 @@
+# Reference only; Ansible renders the deployed Compose file from the role template.
+services:
+  searxng:
+    image: >-
+      ghcr.io/searxng/searxng:2026.8.20-8d3dd0cd4@sha256:9fd6172d7dcec4920273995ccd33338e4cda3093a468261a479f46a2d212723b
+    ports: ["127.0.0.1:8888:8080"]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]

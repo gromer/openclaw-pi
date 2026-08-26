@@ -1,0 +1,35 @@
+[Unit]
+Description=OpenClaw Gateway
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+[Service]
+Type=simple
+User={{ openclaw_user }}
+Group={{ openclaw_group }}
+SupplementaryGroups=docker
+EnvironmentFile={{ openclaw_environment_path }}
+Environment=OPENCLAW_CONFIG_PATH={{ openclaw_config_path }}
+Environment=OPENCLAW_STATE_DIR={{ openclaw_state_dir }}
+ExecStart={{ openclaw_npm_prefix }}/bin/openclaw gateway run
+Restart=on-failure
+RestartSec=5s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ openclaw_state_dir }}
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+[Install]
+WantedBy=multi-user.target
+

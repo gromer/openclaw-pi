@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+restic snapshots >/dev/null 2>&1 || restic init
+restic backup{% for path in restic_backup_paths %} {{ path | quote }}{% endfor %} --tag openclaw-pi
+restic forget --tag openclaw-pi --keep-daily {{ restic_keep_daily }} --keep-weekly {{ restic_keep_weekly }} --keep-monthly {{ restic_keep_monthly }} --prune
+

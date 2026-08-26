@@ -1,0 +1,12 @@
+[Unit]
+Description=Back up OpenClaw irreplaceable state
+After=openclaw.service
+[Service]
+Type=oneshot
+EnvironmentFile={{ restic_environment_path }}
+ExecStart=/usr/local/sbin/openclaw-backup
+Nice=10
+IOSchedulingClass=idle
+PrivateTmp=true
+NoNewPrivileges=true
+

@@ -1,0 +1,4 @@
+---
+common_packages: [ca-certificates, curl, git, jq, python3, python3-apt, rsync, unzip]
+timezone: America/Denver
+

@@ -1,0 +1,35 @@
+---
+- name: Create SearXNG directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - {path: "{{ searxng_compose_dir }}", mode: '0755'}
+    - {path: "{{ searxng_config_dir }}", mode: '0750'}
+- name: Install SearXNG settings
+  ansible.builtin.template:
+    src: settings.yml.j2
+    dest: "{{ searxng_config_dir }}/settings.yml"
+    mode: '0640'
+  no_log: true
+  notify: Restart SearXNG
+- name: Install SearXNG Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ searxng_compose_dir }}/compose.yml"
+    mode: '0644'
+  notify: Restart SearXNG
+- name: Validate SearXNG Compose configuration
+  ansible.builtin.command: docker compose -f compose.yml config --quiet
+  args:
+    chdir: "{{ searxng_compose_dir }}"
+  changed_when: false
+- name: Start SearXNG
+  ansible.builtin.command: docker compose -f compose.yml up -d --remove-orphans
+  args:
+    chdir: "{{ searxng_compose_dir }}"
+  register: searxng_up
+  changed_when: "'Started' in searxng_up.stderr or 'Created' in searxng_up.stderr"
