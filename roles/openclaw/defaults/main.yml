@@ -2,4 +2,3 @@
 openclaw_npm_prefix: /opt/openclaw
 openclaw_environment_path: /etc/openclaw/environment
 openclaw_provider_id: lan-mlx
-

@@ -20,4 +20,3 @@ jobs:
       - run: python3 scripts/validate-vars.py
       - run: scripts/secrets-check.sh
       - run: docker compose -f compose/searxng/compose.yml config --quiet
-

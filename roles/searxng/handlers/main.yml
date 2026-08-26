@@ -4,4 +4,3 @@
   args:
     chdir: "{{ searxng_compose_dir }}"
   changed_when: true
-

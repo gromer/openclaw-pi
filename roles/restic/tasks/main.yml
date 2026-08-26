@@ -38,4 +38,3 @@
     daemon_reload: true
   loop: [openclaw-backup.timer, openclaw-backup-check.timer]
   when: restic_enabled
-

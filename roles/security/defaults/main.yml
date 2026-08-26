@@ -4,4 +4,3 @@ ssh_allow_users: ["{{ admin_user }}"]
 firewall_allow_lan_gateway: false
 unattended_reboot: true
 unattended_reboot_time: "04:15"
-
