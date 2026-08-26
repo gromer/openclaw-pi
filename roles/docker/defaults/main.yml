@@ -3,4 +3,3 @@ docker_apt_arch: arm64
 docker_apt_channel: stable
 docker_packages: [docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
 docker_daemon_live_restore: true
-

@@ -30,4 +30,3 @@
     and (.CapDrop | index("ALL")) != null and .PidMode == "" and .IpcMode != "host"'
   loop: "{{ sandbox_containers.stdout_lines }}"
   changed_when: false
-

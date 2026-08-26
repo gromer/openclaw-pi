@@ -3,4 +3,3 @@
   hosts: all
   become: true
   roles: [verification]
-

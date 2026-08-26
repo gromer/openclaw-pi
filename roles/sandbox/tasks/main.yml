@@ -19,4 +19,3 @@
   ansible.builtin.command: "docker build --pull=false --tag {{ sandbox_image }} /usr/local/share/openclaw-sandbox"
   when: sandbox_build_image and (sandbox_dockerfile.changed or sandbox_image_inspect.rc != 0)
   changed_when: true
-
