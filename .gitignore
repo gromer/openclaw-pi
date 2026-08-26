@@ -11,3 +11,4 @@ secrets.plain.yaml
 age-identity.txt
 .env
 compose/searxng/.env
+/dist/

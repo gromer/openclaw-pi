@@ -20,6 +20,9 @@ contains SearXNG; `openclaw/` contains intentional, Git-managed templates;
 - Membership in the Docker group is root-equivalent. Any change to that trust
   boundary must be conspicuous in documentation and verification.
 - Restores require explicit snapshot selection and overwrite confirmation.
+- Release bootstrap must not require Git access on the Pi. Build bundles only
+  from the tagged Git tree, publish checksums and provenance, reject unsafe
+  archive entries, and preserve immutable installed release directories.
 
 ## Validation
 
@@ -30,4 +33,3 @@ must not be represented as passing unless they ran on the target Pi.
 Use handlers for restarts, validate generated configuration before notifying
 services, preserve SSH access while changing sshd/firewall policy, and document
 every operational or trust-boundary change in README.md or `docs/`.
-
