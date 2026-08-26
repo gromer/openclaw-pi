@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-test_root=$(mktemp -d)
+test_root=$(mktemp -d "${TMPDIR:-/tmp}/openclaw-release-assets.XXXXXX")
 cleanup() {
   rm -rf "$test_root"
 }

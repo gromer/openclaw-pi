@@ -58,6 +58,13 @@ case "$RELEASE" in
     exit 1
     ;;
 esac
+case "$REPOSITORY" in
+  */*) ;;
+  *)
+    echo "ERROR: OPENCLAW_PI_REPOSITORY must be in the form OWNER/REPO" >&2
+    exit 1
+    ;;
+esac
 REPOSITORY_OWNER=${REPOSITORY%%/*}
 REPOSITORY_NAME=${REPOSITORY#*/}
 case "$REPOSITORY_OWNER/$REPOSITORY_NAME" in
