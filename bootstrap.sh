@@ -32,6 +32,7 @@ done
 [ -n "$REPO_REF" ] || { echo "ERROR: OPENCLAW_PI_REF must be an immutable tag or commit" >&2; exit 1; }
 case "$REPO_REF" in main|master|develop|latest|HEAD) echo "ERROR: mutable repository ref rejected" >&2; exit 1 ;; esac
 [ -r /etc/os-release ] || { echo "ERROR: /etc/os-release missing" >&2; exit 1; }
+# shellcheck source=/etc/os-release
 . /etc/os-release
 [ "${ID:-}" = raspbian ] || [ "${ID_LIKE:-}" = debian ] || { echo "ERROR: Raspberry Pi OS required" >&2; exit 1; }
 [ "$(uname -m)" = aarch64 ] || { echo "ERROR: 64-bit ARM (aarch64) required" >&2; exit 1; }
