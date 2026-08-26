@@ -57,6 +57,9 @@ origin trusted by OpenClaw's guarded fetch path.
 
 ## Initial setup
 
+For an end-to-end first installation using an existing Ollama server, follow
+[Getting started with a fresh Pi and Ollama](docs/getting-started-ollama.md).
+
 Install Raspberry Pi OS 64-bit, enable SSH, create an initial administrative
 account, apply OS updates, and reserve a DHCP address. On the controller:
 
