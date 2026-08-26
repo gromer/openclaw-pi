@@ -1,16 +1,41 @@
+---
 name: Publish bootstrap assets
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub Release tag to rebuild
+        required: true
+        type: string
 permissions:
   contents: write
 jobs:
   assets:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: "${{ github.event.release.tag_name || inputs.tag }}"
     steps:
       - uses: actions/checkout@v4
-        with: {ref: "${{ github.event.release.tag_name }}"}
-      - run: shellcheck bootstrap.sh && sha256sum bootstrap.sh > bootstrap.sh.sha256
-      - env:
+        with:
+          ref: "${{ github.event.release.tag_name || inputs.tag }}"
+          fetch-depth: 0
+      - name: Validate release source
+        run: |
+          shellcheck bootstrap.sh scripts/*.sh tests/*.sh
+          sh -n bootstrap.sh scripts/*.sh tests/*.sh
+      - name: Build deterministic release bundle
+        run: scripts/build-release-assets.sh "$RELEASE_TAG" dist
+      - name: Upload release assets
+        env:
           GH_TOKEN: "${{ github.token }}"
-        run: gh release upload "${{ github.event.release.tag_name }}" bootstrap.sh bootstrap.sh.sha256 --clobber
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            dist/bootstrap.sh \
+            dist/bootstrap.sh.sha256 \
+            "dist/openclaw-pi-${RELEASE_TAG}.tar.gz" \
+            "dist/openclaw-pi-${RELEASE_TAG}.tar.gz.sha256" \
+            dist/release-manifest.json \
+            dist/release-manifest.json.sha256 \
+            --clobber

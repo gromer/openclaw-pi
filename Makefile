@@ -3,18 +3,19 @@ INVENTORY ?= inventories/production/hosts.yml
 PLAYBOOK ?= playbooks/site.yml
 ANSIBLE_ARGS ?=
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap deps preflight provision validate check syntax lint diff verify backup restore secrets-init secrets-edit secrets-check backup-check compose-check
+.PHONY: help bootstrap deps preflight provision validate check syntax lint diff verify backup restore secrets-init secrets-edit secrets-check backup-check compose-check release-test
 help: ## Show targets
 	@awk 'BEGIN{FS=":.*## "}/^[a-zA-Z0-9_-]+:.*## /{printf "%-18s %s\n",$$1,$$2}' $(MAKEFILE_LIST)
 bootstrap: ## Validate the bootstrap script locally
-	sh -n bootstrap.sh && shellcheck bootstrap.sh
+	sh -n bootstrap.sh scripts/*.sh tests/*.sh
+	shellcheck bootstrap.sh scripts/*.sh tests/*.sh
 deps: ## Install declared Ansible dependencies
 	ansible-galaxy install -r requirements.yml
 preflight: ## Check controller prerequisites
 	./scripts/preflight.sh
 provision: ## Provision the production inventory
 	ansible-playbook -i $(INVENTORY) $(PLAYBOOK) $(ANSIBLE_ARGS)
-validate: syntax compose-check secrets-check ## Run credential-free structural validation
+validate: syntax compose-check secrets-check release-test ## Run credential-free structural validation
 	python3 scripts/validate-vars.py
 	python3 tests/test_static.py
 check: validate lint bootstrap ## Run all local static checks
@@ -42,3 +43,5 @@ backup-check: ## Check repository and snapshot freshness using current Restic en
 	restic check && ./scripts/backup-freshness.sh
 compose-check: ## Validate committed Compose reference
 	docker compose -f compose/searxng/compose.yml config --quiet
+release-test: ## Build and inspect a disposable release bundle
+	./tests/test-release-assets.sh

@@ -1,19 +1,36 @@
-# Bootstrap with curl
+# Bootstrap from a release bundle
 
-This is the operator runbook for provisioning a newly installed Raspberry Pi 5
-from a versioned GitHub release. The safe workflow is download, verify, inspect,
-then execute. Do not use `curl ... | sudo sh`; that executes bytes before they can
-be authenticated or reviewed.
+This runbook provisions a newly installed Raspberry Pi 5 without cloning or
+reading the Git repository. The safe workflow is download, verify, inspect, then
+execute. Never use `curl ... | sudo sh`; that executes bytes before they can be
+authenticated or reviewed.
+
+## Release contents
+
+The release workflow creates these assets from the exact tagged commit:
+
+```text
+bootstrap.sh
+bootstrap.sh.sha256
+openclaw-pi-<tag>.tar.gz
+openclaw-pi-<tag>.tar.gz.sha256
+release-manifest.json
+release-manifest.json.sha256
+```
+
+The tarball contains the Ansible configuration, roles, Compose files, scripts,
+tests, examples, and documentation. It excludes GitHub workflow metadata and all
+untracked production data. The manifest identifies the tag, source commit,
+archive name, and archive SHA-256.
 
 ## 1. Prepare the Pi
 
 Install current 64-bit Raspberry Pi OS, enable SSH using a public key, update the
-OS, and confirm at least 4 GiB is free. The script independently verifies root
-privileges, Raspberry Pi 5 hardware, `aarch64`, Raspberry Pi OS, DNS/networking,
-and free space.
+OS, and confirm at least 4 GiB is free. The bootstrap independently verifies root
+privileges, Raspberry Pi 5 hardware, `aarch64`, Raspberry Pi OS, and free space.
 
-The repository intentionally excludes production inventory. Transfer these files
-to the Pi over a trusted channel before running provisioning:
+The release intentionally excludes production inventory. Transfer these files
+to the Pi over a trusted channel:
 
 ```text
 /root/openclaw-inventory/hosts.yml
@@ -21,21 +38,19 @@ to the Pi over a trusted channel before running provisioning:
 /root/openclaw-inventory/group_vars/secrets.sops.yml
 ```
 
-All three should be root-owned and mode `0600`; their parent directories should
-be `0700`. `secrets.sops.yml` must be valid SOPS ciphertext. If the Pi acts as the
+The files should be root-owned and mode `0600`; their parent directories should
+be `0700`. `secrets.sops.yml` must be valid SOPS ciphertext. If the Pi is the
 Ansible controller, install SOPS from its verified upstream release and place the
-corresponding age identity at `/root/.config/sops/age/keys.txt` with mode `0600`.
-The identity must never enter Git, a release asset, shell history, or logs.
+matching age identity at `/root/.config/sops/age/keys.txt` with mode `0600`.
+Never put the identity in Git, a release asset, shell history, or logs.
 
-## 2. Download and authenticate the release asset
+## 2. Download and authenticate bootstrap
 
-Set the release identity in local shell variables to reduce transcription errors:
+Choose an existing release that contains a bundle. Replace `vX.Y.Z` below:
 
 ```sh
-OWNER=gromer
-REPOSITORY=openclaw-pi
-RELEASE=v1.0.0
-BASE_URL="https://github.com/${OWNER}/${REPOSITORY}/releases/download/${RELEASE}"
+RELEASE=vX.Y.Z
+BASE_URL="https://github.com/gromer/openclaw-pi/releases/download/${RELEASE}"
 
 curl --fail --silent --show-error --location --remote-name \
   "${BASE_URL}/bootstrap.sh"
@@ -44,89 +59,117 @@ curl --fail --silent --show-error --location --remote-name \
 sha256sum --check bootstrap.sh.sha256
 ```
 
-The checksum proves that the two downloaded assets agree; it does not by itself
-prove who published them. Verify the GitHub release page, tag, publisher, and
-checksum through a trusted independent channel. Then inspect the script:
+The checksum detects corruption or disagreement between the two assets; it does
+not independently prove who published them. Verify the release page, tag,
+publisher, and checksum using a trusted independent channel. Inspect the script:
 
 ```sh
 less bootstrap.sh
 sh bootstrap.sh --help
 ```
 
-Do not proceed if checksum verification fails. Delete both downloads, resolve the
-release provenance problem, and download them again.
+Stop if verification fails. Do not execute or modify the downloaded script.
 
 ## 3. Validate without provisioning
 
-Validation-only mode clones the requested immutable ref and runs repository
-preflight/static validation without applying Ansible to the Pi:
+Validation-only mode downloads and authenticates the full release bundle,
+installs it version-by-version, then performs dependency-light syntax and
+structural checks without applying Ansible:
 
 ```sh
-sudo OPENCLAW_PI_REPO_URL=https://github.com/gromer/openclaw-pi.git \
-  OPENCLAW_PI_REF=v1.0.0 \
-  sh bootstrap.sh --validate-only
+sudo OPENCLAW_PI_RELEASE="$RELEASE" sh bootstrap.sh --validate-only
 ```
 
-The repository ref is mandatory. Release tags and full commit SHAs are accepted;
-common mutable branch names are rejected. Validation-only mode does not require a
-production inventory.
+The script derives the asset URL from the release and the default repository
+`gromer/openclaw-pi`. No Git client, checkout, deploy key, or GitHub API token is
+needed.
 
 ## 4. Preview and provision
 
 Run Ansible check/diff mode first:
 
 ```sh
-sudo OPENCLAW_PI_REPO_URL=https://github.com/gromer/openclaw-pi.git \
-  OPENCLAW_PI_REF=v1.0.0 \
+sudo OPENCLAW_PI_RELEASE="$RELEASE" \
   OPENCLAW_PI_INVENTORY=/root/openclaw-inventory/hosts.yml \
   sh bootstrap.sh --dry-run
 ```
 
-Review the output, then provision using the same release and inventory:
+Review the output, then provision with the same release and inventory:
 
 ```sh
-sudo OPENCLAW_PI_REPO_URL=https://github.com/gromer/openclaw-pi.git \
-  OPENCLAW_PI_REF=v1.0.0 \
+sudo OPENCLAW_PI_RELEASE="$RELEASE" \
   OPENCLAW_PI_INVENTORY=/root/openclaw-inventory/hosts.yml \
   sh bootstrap.sh
 ```
 
-The default checkout is `/opt/openclaw-pi`. Override it with
-`OPENCLAW_PI_DEST=/an/absolute/path` when necessary. The script installs Git,
-Ansible Core, CA certificates, curl, and Make through apt; it does not accept
-secrets as arguments. It reuses and updates a valid existing checkout, so the
-same command is the supported rerun and upgrade path. To upgrade, substitute a
-new reviewed immutable tag or commit.
+The bootstrap installs only Ansible Core, CA certificates, curl, Make, and tar
+through apt. It downloads the archive and checksum over HTTPS, verifies SHA-256,
+and rejects absolute paths, path traversal, symbolic links, and hard links before
+extraction.
 
-## Private repositories
+## Installation and rollback model
 
-Configure root's SSH `known_hosts` and a narrowly scoped read-only deploy key
-before bootstrap. Confirm access interactively, then use either form:
+Releases are immutable and installed as:
+
+```text
+/opt/openclaw-pi/
+├── current -> releases/vX.Y.Z
+└── releases/
+    ├── vX.Y.Z/
+    └── previous-version/
+```
+
+The `current` link is replaced atomically only after verification and extraction
+succeed. Rerunning the same release is safe: its downloaded checksum must match
+the installed checksum marker. The script refuses to overwrite an existing tag
+whose content differs.
+
+To upgrade, download the new release's `bootstrap.sh` and checksum, verify them,
+and run with the new tag. To roll back code, rerun the bootstrap from the older
+release with that older immutable tag. Ansible may not reverse data migrations;
+restore mutable state from Restic when the release notes require it.
+
+## Mirrors and private releases
+
+For another public fork, set its GitHub repository slug:
 
 ```sh
-sudo OPENCLAW_PI_REPO_URL=git@github.com:OWNER/openclaw-pi.git \
-  OPENCLAW_PI_REF=FULL_COMMIT_SHA \
+sudo OPENCLAW_PI_RELEASE="$RELEASE" \
+  OPENCLAW_PI_REPOSITORY=OWNER/REPOSITORY \
   OPENCLAW_PI_INVENTORY=/root/openclaw-inventory/hosts.yml \
   sh bootstrap.sh
 ```
 
-Do not embed a personal access token in an HTTPS URL. It can leak through process
-inspection, shell history, terminal capture, or logs.
+For a private release, download all six assets through an authenticated process,
+publish them unchanged to a controlled HTTPS origin, and set the directory URL:
+
+```sh
+sudo OPENCLAW_PI_RELEASE="$RELEASE" \
+  OPENCLAW_PI_ASSET_BASE_URL=https://artifacts.example/openclaw-pi/vX.Y.Z \
+  OPENCLAW_PI_INVENTORY=/root/openclaw-inventory/hosts.yml \
+  sh bootstrap.sh
+```
+
+Do not embed access tokens in URLs. The mirror must preserve the original asset
+names and bytes. Verify its checksums against GitHub through an independent
+channel.
 
 ## Troubleshooting and cleanup
 
-- `OPENCLAW_PI_REF must be an immutable tag or commit`: set a release tag or full
-  SHA, not a branch name.
-- `pre-staged production hosts.yml`: set `OPENCLAW_PI_INVENTORY` to the exact
-  absolute inventory path and check root can read it.
-- SOPS decryption failure: confirm `sops` is installed, the encrypted file is
-  referenced by inventory, and the root-only age identity matches the committed
-  public recipient.
-- SSH clone failure: verify root's deploy key and pinned `known_hosts`; do not
-  disable host-key verification.
-- Inference reachability failure: test the inventory URL from the Pi and inspect
-  the Mac firewall before rerunning.
+- `OPENCLAW_PI_RELEASE is required`: supply the exact published tag.
+- HTTP 404 for the archive: the selected release predates release bundles or its
+  asset workflow failed. Inspect the release assets and Actions run.
+- Checksum failure: do not retry execution; remove the downloads and investigate
+  release or mirror integrity.
+- Existing release checksum differs: do not delete or overwrite it blindly.
+  Inspect the installed tree and release provenance for tampering or tag reuse.
+- Production inventory error: set `OPENCLAW_PI_INVENTORY` to the absolute
+  `hosts.yml` path and confirm root can read it.
+- SOPS failure: confirm SOPS is installed, `secrets_file` points to the encrypted
+  file, and the root-only age identity matches the configured public recipient.
+- Inference failure: test the inventory endpoint from the Pi and inspect the Mac
+  firewall before rerunning.
 
-The script leaves its versioned checkout in `/opt/openclaw-pi` by design. The two
-downloaded release files can be retained for audit or removed after recording the
-verified checksum. They contain no secrets.
+Temporary downloads are removed automatically. Installed releases remain under
+`/opt/openclaw-pi/releases` for audit and deliberate rollback. Do not manually
+delete the target of `current` while provisioning is active.

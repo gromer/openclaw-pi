@@ -13,10 +13,11 @@ jobs:
         with: {python-version: "3.12"}
       - run: pip install ansible-core ansible-lint yamllint
       - run: sudo apt-get update && sudo apt-get install -y shellcheck
-      - run: sh -n bootstrap.sh && shellcheck bootstrap.sh scripts/*.sh
+      - run: sh -n bootstrap.sh scripts/*.sh tests/*.sh && shellcheck bootstrap.sh scripts/*.sh tests/*.sh
       - run: yamllint .
       - run: ansible-playbook -i inventories/example/hosts.yml playbooks/site.yml --syntax-check
       - run: ansible-lint playbooks/site.yml
       - run: python3 scripts/validate-vars.py
       - run: scripts/secrets-check.sh
+      - run: tests/test-release-assets.sh
       - run: docker compose -f compose/searxng/compose.yml config --quiet
