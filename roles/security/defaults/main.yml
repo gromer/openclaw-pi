@@ -1,6 +1,6 @@
 ---
-ssh_port: 22
-ssh_allow_users: ["{{ admin_user }}"]
-firewall_allow_lan_gateway: false
-unattended_reboot: true
-unattended_reboot_time: "04:15"
+security_ssh_port: 22
+security_ssh_allow_users: ["{{ admin_user }}"]
+security_firewall_allow_lan_gateway: false
+security_unattended_reboot: true
+security_unattended_reboot_time: "04:15"
