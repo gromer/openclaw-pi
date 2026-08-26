@@ -1,4 +1,3 @@
 Unattended-Upgrade::Origins-Pattern { "origin=Debian,codename=${distro_codename},label=Debian-Security"; };
-Unattended-Upgrade::Automatic-Reboot "{{ unattended_reboot | ternary('true', 'false') }}";
-Unattended-Upgrade::Automatic-Reboot-Time "{{ unattended_reboot_time }}";
-
+Unattended-Upgrade::Automatic-Reboot "{{ security_unattended_reboot | ternary('true', 'false') }}";
+Unattended-Upgrade::Automatic-Reboot-Time "{{ security_unattended_reboot_time }}";

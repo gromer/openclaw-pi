@@ -2,10 +2,14 @@
 - name: Set hostname
   ansible.builtin.hostname:
     name: "{{ pi_hostname }}"
+- name: Inspect configured timezone
+  ansible.builtin.command: timedatectl show --property=Timezone --value
+  register: common_current_timezone
+  changed_when: false
 - name: Configure timezone
-  ansible.builtin.command: "timedatectl set-timezone {{ timezone }}"
-  register: timezone_result
-  changed_when: timezone_result.rc == 0 and ansible_date_time.tz != timezone
+  ansible.builtin.command: "timedatectl set-timezone {{ common_timezone }}"
+  when: common_current_timezone.stdout != common_timezone
+  changed_when: true
 - name: Install base packages
   ansible.builtin.apt:
     name: "{{ common_packages }}"
@@ -15,7 +19,7 @@
 - name: Inspect active NetworkManager connection
   ansible.builtin.command: >-
     nmcli -g ipv4.method,ipv4.addresses,ipv4.gateway connection show {{ pi_network_connection }}
-  register: network_current
+  register: common_network_current
   changed_when: false
   when: pi_manage_network
 - name: Configure declared DHCP network settings
@@ -33,7 +37,8 @@
       - ""
       - ipv4.dns
       - "{{ pi_dns_servers | join(',') }}"
-  when: pi_manage_network and pi_network_mode == 'dhcp' and 'auto' not in network_current.stdout
+  when: pi_manage_network and pi_network_mode == 'dhcp' and 'auto' not in common_network_current.stdout
+  changed_when: true
   notify: Activate network connection
 - name: Configure declared static network settings
   ansible.builtin.command:
@@ -52,5 +57,6 @@
       - "{{ pi_dns_servers | join(',') }}"
   when: >-
     pi_manage_network and pi_network_mode == 'static' and
-    (pi_static_address not in network_current.stdout or pi_static_gateway not in network_current.stdout)
+    (pi_static_address not in common_network_current.stdout or pi_static_gateway not in common_network_current.stdout)
+  changed_when: true
   notify: Activate network connection

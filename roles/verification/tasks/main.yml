@@ -10,23 +10,26 @@
   ansible.builtin.uri:
     url: "http://127.0.0.1:{{ openclaw_gateway_port }}/health"
     status_code: [200, 204]
-  register: gateway_health
+  register: verification_gateway_health
   retries: 12
   delay: 5
-  until: gateway_health.status in [200, 204]
+  until: verification_gateway_health.status in [200, 204]
 - name: Verify SearXNG loopback health
   ansible.builtin.uri:
     url: "http://127.0.0.1:{{ searxng_port }}/healthz"
     status_code: 200
 - name: Inspect running sandbox containers
   ansible.builtin.command: docker ps --filter name=openclaw-sbx- --format "{{ '{{' }}.ID{{ '}}' }}"
-  register: sandbox_containers
+  register: verification_sandbox_containers
   changed_when: false
 - name: Verify sandbox isolation for existing containers
-  ansible.builtin.shell: >-
-    docker inspect {{ item }} --format
-    '{{ "{{" }}json .HostConfig{{ "}}" }}' |
-    jq -e '.Privileged == false and .NetworkMode == "none" and .ReadonlyRootfs == true
-    and (.CapDrop | index("ALL")) != null and .PidMode == "" and .IpcMode != "host"'
-  loop: "{{ sandbox_containers.stdout_lines }}"
+  ansible.builtin.shell: |
+    set -o pipefail
+    docker inspect {{ item }} --format \
+      '{{ "{{" }}json .HostConfig{{ "}}" }}' |
+      jq -e '.Privileged == false and .NetworkMode == "none" and .ReadonlyRootfs == true
+      and (.CapDrop | index("ALL")) != null and .PidMode == "" and .IpcMode != "host"'
+  args:
+    executable: /bin/bash
+  loop: "{{ verification_sandbox_containers.stdout_lines }}"
   changed_when: false

@@ -15,14 +15,16 @@
 - name: Configure UFW safely
   ansible.builtin.shell: |
     set -eu
-    ufw allow {{ ssh_port }}/tcp comment 'SSH management'
+    ufw allow {{ security_ssh_port }}/tcp comment 'SSH management'
     ufw default deny incoming
     ufw default allow outgoing
     ufw --force enable
   args:
     executable: /bin/sh
-  register: ufw_result
-  changed_when: "'Rules updated' in ufw_result.stdout or 'Firewall is active' not in ufw_result.stdout"
+  register: security_ufw_result
+  changed_when: >-
+    'Rules updated' in security_ufw_result.stdout or
+    'Firewall is active' not in security_ufw_result.stdout
 - name: Configure unattended upgrades
   ansible.builtin.template:
     src: 52-openclaw-unattended-upgrades.j2
