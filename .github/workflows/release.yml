@@ -23,8 +23,8 @@ jobs:
           fetch-depth: 0
       - name: Validate release source
         run: |
-          shellcheck bootstrap.sh scripts/*.sh tests/*.sh
-          sh -n bootstrap.sh scripts/*.sh tests/*.sh
+          shellcheck bootstrap.sh install.sh scripts/*.sh tests/*.sh
+          sh -n bootstrap.sh install.sh scripts/*.sh tests/*.sh
       - name: Build deterministic release bundle
         run: scripts/build-release-assets.sh "$RELEASE_TAG" dist
       - name: Upload release assets
@@ -34,6 +34,8 @@ jobs:
           gh release upload "$RELEASE_TAG" \
             dist/bootstrap.sh \
             dist/bootstrap.sh.sha256 \
+            dist/install.sh \
+            dist/install.sh.sha256 \
             "dist/openclaw-pi-${RELEASE_TAG}.tar.gz" \
             "dist/openclaw-pi-${RELEASE_TAG}.tar.gz.sha256" \
             dist/release-manifest.json \

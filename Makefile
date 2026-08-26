@@ -7,8 +7,8 @@ ANSIBLE_ARGS ?=
 help: ## Show targets
 	@awk 'BEGIN{FS=":.*## "}/^[a-zA-Z0-9_-]+:.*## /{printf "%-18s %s\n",$$1,$$2}' $(MAKEFILE_LIST)
 bootstrap: ## Validate the bootstrap script locally
-	sh -n bootstrap.sh scripts/*.sh tests/*.sh
-	shellcheck bootstrap.sh scripts/*.sh tests/*.sh
+	sh -n bootstrap.sh install.sh scripts/*.sh tests/*.sh
+	shellcheck bootstrap.sh install.sh scripts/*.sh tests/*.sh
 deps: ## Install declared Ansible dependencies
 	ansible-galaxy install -r requirements.yml
 preflight: ## Check controller prerequisites
