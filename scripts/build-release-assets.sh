@@ -60,5 +60,11 @@ chmod 0755 "$output_dir/bootstrap.sh"
   sha256_file release-manifest.json > release-manifest.json.sha256
   sha256_file bootstrap.sh > bootstrap.sh.sha256
 )
+tar -xOf "$archive_path" "openclaw-pi-${release_tag}/install.sh" > "$output_dir/install.sh"
+chmod 0755 "$output_dir/install.sh"
+(
+  cd "$output_dir"
+  sha256_file install.sh > install.sh.sha256
+)
 
 echo "Built release assets in $output_dir"

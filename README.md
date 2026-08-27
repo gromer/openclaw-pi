@@ -60,6 +60,41 @@ origin trusted by OpenClaw's guarded fetch path.
 For an end-to-end first installation using an existing Ollama server, follow
 [Getting started with a fresh Pi and Ollama](docs/getting-started-ollama.md).
 
+For a fresh Pi that already has SSH access and can reach Ollama, the recommended
+installer flow downloads the latest installer and its checksum as separate
+release assets before running it:
+
+These URLs require a release containing `install.sh`; merging this feature alone
+does not add assets to an older release.
+
+```sh
+mkdir -p "$HOME/openclaw-install" && cd "$HOME/openclaw-install"
+curl --fail --silent --show-error --location --remote-name \
+  https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh
+curl --fail --silent --show-error --location --remote-name \
+  https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh.sha256
+sha256sum --check install.sh.sha256
+less install.sh
+sudo sh install.sh
+```
+
+The installer asks for the Ollama URL and exact model, reuses an existing SSH
+public key, generates age and application secrets locally, builds a root-only
+inventory, resolves `latest` to an immutable release tag, and runs the existing
+checksum-verifying bootstrap. Back up the generated age identity immediately.
+Restic remains disabled until a real repository is deliberately configured.
+
+For convenience, this single paste downloads and executes the latest installer:
+
+```sh
+curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
+```
+
+The one-liner cannot authenticate or inspect the installer before execution and
+therefore has a weaker trust boundary than the checksum-verified flow. The
+installer still pins the resolved release and verifies the bootstrap and Ansible
+bundle checksums. Use the verified flow for production.
+
 Install Raspberry Pi OS 64-bit, enable SSH, create an initial administrative
 account, apply OS updates, and reserve a DHCP address. On the controller:
 
@@ -136,7 +171,7 @@ sudo OPENCLAW_PI_RELEASE="$RELEASE" \
 release mirror. `OPENCLAW_PI_DEST` optionally changes the install root from
 `/opt/openclaw-pi`.
 
-Each GitHub Release contains the bootstrap files, the complete versioned
+Each GitHub Release contains the installer and bootstrap files, the complete versioned
 `openclaw-pi-<tag>.tar.gz` Ansible bundle, SHA-256 files, and a provenance
 manifest recording the Git commit. The bootstrap verifies the archive before
 extracting it, rejects path traversal and links, never overwrites an installed

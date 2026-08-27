@@ -14,6 +14,38 @@ is required on the Pi.
 Commands marked **workstation** run on your laptop or desktop. Commands marked
 **Pi** run on the Raspberry Pi. Replace every value written as `REPLACE_...`.
 
+## Fast path
+
+After completing the SSH setup in sections 1 and 2, the guided installer can do
+the remaining initial configuration. The recommended checksum-verified flow is:
+
+This requires a newly published release that includes the installer assets;
+merging the installer code does not alter an existing release.
+
+```sh
+mkdir -p "$HOME/openclaw-install" && cd "$HOME/openclaw-install"
+curl -fsSLO https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh
+curl -fsSLO https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh.sha256
+sha256sum --check install.sh.sha256
+less install.sh
+sudo sh install.sh
+```
+
+Enter the Ollama origin, such as `http://mac-mini.local:11434`, and the exact
+model shown by Ollama. The installer reuses the current account's authorized SSH
+key where possible, generates and encrypts local secrets, and provisions the
+latest release. Back up `/root/.config/sops/age/keys.txt` securely when it
+finishes.
+
+For a convenience-first installation, accepting that network-delivered code is
+executed as root before separate checksum inspection:
+
+```sh
+curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
+```
+
+The rest of this guide remains the fully manual, auditable workflow.
+
 ## Before you begin
 
 Record:
@@ -299,18 +331,7 @@ sudo env SOPS_AGE_KEY_FILE=/root/.config/sops/age/keys.txt \
   sops --decrypt /root/openclaw-inventory/group_vars/secrets.sops.yml >/dev/null
 ```
 
-## 8. Prepare the dedicated OpenClaw group
-
-The v1.1.0 users role expects the dedicated primary group to exist on a truly
-fresh host. Create it idempotently before provisioning:
-
-```sh
-getent group openclaw >/dev/null || sudo groupadd --system openclaw
-```
-
-This is preferable to assigning the service account to a shared system group.
-
-## 9. Download and verify the v1.1.0 bootstrap
+## 8. Download and verify the v1.1.0 bootstrap
 
 Use a clean directory on the Pi:
 
@@ -329,7 +350,7 @@ less bootstrap.sh
 Do not use `curl | sudo sh`. The bootstrap will independently download and
 verify the full Ansible release archive.
 
-## 10. Validate and provision
+## 9. Validate and provision
 
 First perform dependency-light release and Ansible syntax validation:
 
@@ -358,7 +379,7 @@ sudo OPENCLAW_PI_RELEASE=v1.1.0 \
 The inference reachability task deliberately stops provisioning if the Pi cannot
 reach Ollama or receive HTTP 200 from `/api/tags`.
 
-## 11. Verify SSH before closing the original session
+## 10. Verify SSH before closing the original session
 
 Provisioning disables password login, denies root login, restricts SSH to
 `piadmin`, and enables UFW after permitting SSH. From a **new workstation
@@ -379,7 +400,7 @@ sudo ls -ld /home/piadmin/.ssh
 sudo ls -l /home/piadmin/.ssh/authorized_keys
 ```
 
-## 12. Verify services and open the dashboard
+## 11. Verify services and open the dashboard
 
 From the new `piadmin` session:
 
@@ -409,7 +430,7 @@ sudo env \
 Copy only the `gateway_token` value into the dashboard, then exit the editor
 without changing the file.
 
-## 13. After the first successful login
+## 12. After the first successful login
 
 - Store the production inventory and encrypted SOPS file in protected backup
   storage; keep the age identity backed up separately.

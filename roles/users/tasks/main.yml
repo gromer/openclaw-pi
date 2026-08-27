@@ -6,6 +6,10 @@
     append: true
     shell: /bin/bash
     create_home: true
+- name: Create OpenClaw service group
+  ansible.builtin.group:
+    name: "{{ openclaw_group }}"
+    system: true
 - name: Create administrator SSH directory
   ansible.builtin.file:
     path: "/home/{{ admin_user }}/.ssh"
