@@ -51,6 +51,29 @@
       - not restic_enabled or openclaw_secrets.restic_password | default('') | length >= 20
   no_log: true
   when: secrets_file | length > 0
+- name: Reject unsupported characters in environment secrets
+  ansible.builtin.assert:
+    that:
+      - not (openclaw_secrets.gateway_token | default('') | regex_search('[\r\n]'))
+      - not (openclaw_secrets.inference_api_key | default('') | regex_search('[\r\n]'))
+    fail_msg: "OpenClaw secrets must not contain raw newline characters."
+  no_log: true
+- name: Validate OpenClaw string inventory values
+  ansible.builtin.assert:
+    that:
+      - openclaw_gateway_bind is string
+      - inference_base_url is string
+      - inference_model is string
+      - openclaw_provider_id is string
+      - openclaw_workspace_dir is string
+      - sandbox_mode is string
+      - sandbox_scope is string
+      - sandbox_workspace_access is string
+      - sandbox_image is string
+      - sandbox_network is string
+      - sandbox_memory is string
+      - sandbox_memory_swap is string
+    fail_msg: "OpenClaw string settings must be strings in inventory/group vars."
 - name: Install protected environment
   ansible.builtin.template:
     src: environment.j2
@@ -60,14 +83,43 @@
     mode: '0640'
   no_log: true
   notify: Restart OpenClaw
-- name: Render OpenClaw configuration
-  ansible.builtin.template:
-    src: openclaw.json.j2
-    dest: "{{ openclaw_config_path }}"
-    owner: root
-    group: "{{ openclaw_group }}"
-    mode: '0640'
-  notify: Restart OpenClaw
+- name: Render and validate OpenClaw configuration
+  block:
+    - name: Create temporary OpenClaw configuration file
+      ansible.builtin.tempfile:
+        state: file
+        path: "{{ openclaw_config_path | dirname }}"
+        suffix: .json
+      register: openclaw_config_candidate
+    - name: Render OpenClaw configuration candidate
+      ansible.builtin.template:
+        src: openclaw.json.j2
+        dest: "{{ openclaw_config_candidate.path }}"
+        owner: root
+        group: "{{ openclaw_group }}"
+        mode: '0640'
+    - name: Validate OpenClaw configuration candidate
+      ansible.builtin.command: "{{ openclaw_npm_prefix }}/bin/openclaw config validate"
+      environment:
+        OPENCLAW_CONFIG_PATH: "{{ openclaw_config_candidate.path }}"
+        OPENCLAW_GATEWAY_TOKEN: validation-placeholder-token
+        INFERENCE_API_KEY: validation-placeholder-key
+      changed_when: false
+    - name: Install validated OpenClaw configuration
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ openclaw_config_candidate.path }}"
+        dest: "{{ openclaw_config_path }}"
+        owner: root
+        group: "{{ openclaw_group }}"
+        mode: '0640'
+      notify: Restart OpenClaw
+  always:
+    - name: Remove temporary OpenClaw configuration candidate
+      ansible.builtin.file:
+        path: "{{ openclaw_config_candidate.path }}"
+        state: absent
+      when: openclaw_config_candidate.path is defined
 - name: Check inference endpoint before service restart
   ansible.builtin.uri:
     url: "{{ inference_base_url }}{{ '/api/tags' if inference_backend == 'ollama' else '/models' }}"
