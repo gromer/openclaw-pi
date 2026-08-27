@@ -33,6 +33,10 @@ tar -tzf "$archive" | awk -v prefix="openclaw-pi-${tag}/" '
   /\.github\// { bad = 1 }
   END { exit bad }
 '
+if tar -tzf "$archive" | grep -Eq '(^|/)(age-identity(\.txt)?|sops-age-keys\.txt|secrets\.plain(\.ya?ml)?)$|\.agekey$|\.dec\.ya?ml$'; then
+  echo "forbidden secret filename found in release archive" >&2
+  exit 1
+fi
 grep -F '"release": "v9.9.9-test"' "$test_root/dist/release-manifest.json" >/dev/null
 grep -F '"archive": "openclaw-pi-v9.9.9-test.tar.gz"' "$test_root/dist/release-manifest.json" >/dev/null
 grep -F "\"commit\": \"$(git rev-parse HEAD)\"" "$test_root/dist/release-manifest.json" >/dev/null

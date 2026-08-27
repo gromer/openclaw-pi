@@ -5,9 +5,13 @@
 2. Recover this repository from its remote or a verified archive. If the
    controller was lost, create a clean controller and reinstall Ansible/SOPS;
    never copy untrusted caches.
-3. Retrieve the age identity from offline encrypted custody, verify its public
-   recipient matches `.sops.yaml`, set `SOPS_AGE_KEY_FILE`, and decrypt only in
-   memory via Ansible. Never place the identity in the repository or on the Pi.
+3. Choose your SOPS custody mode before recovery:
+   - convenience/local mode: restore the root-only identity to
+     `/root/.config/sops/age/keys.txt` on the Pi, then back it up offline again;
+   - controller mode (stronger): keep the private identity off-Pi and stage it on
+     the Pi only for explicit decrypt/provision steps, then remove it.
+   In both modes, verify the public recipient with `age-keygen -y` and confirm it
+   matches `.sops.yaml` before decrypting.
 4. Update production inventory for the new Pi address. If the Mac address or
    hostname changed, update `inference_host` and `inference_base_url`, then test
    its API from the Pi network.
@@ -21,7 +25,10 @@
    tunnel, gateway authentication, inference response, SearXNG host connectivity,
    sandbox network denial, a new backup, and `restic check`.
 
+If any age identity copy is missing, tampered, or exposed: freeze changes, rotate
+the age identity and SOPS recipient, re-encrypt secrets, regenerate service
+tokens, reprovision, and invalidate leaked credentials.
+
 Perform a recovery drill at least quarterly: restore a selected snapshot to
 staging, validate age recovery from each escrow location, record recovery time,
 and delete the staging copy securely. Annually rehearse replacement-Pi recovery.
-

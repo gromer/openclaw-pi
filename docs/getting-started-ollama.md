@@ -34,8 +34,9 @@ sudo sh install.sh
 Enter the Ollama origin, such as `http://mac-mini.local:11434`, and the exact
 model shown by Ollama. The installer reuses the current account's authorized SSH
 key where possible, generates and encrypts local secrets, and provisions the
-latest release. Back up `/root/.config/sops/age/keys.txt` securely when it
-finishes.
+latest release. This installer is the convenience/local custody mode: the Pi
+stores the private age identity at `/root/.config/sops/age/keys.txt` (root-only)
+for local decrypts. Back it up securely when the install finishes.
 
 For a convenience-first installation, accepting that network-delivered code is
 executed as root before separate checksum inspection:
@@ -191,7 +192,14 @@ messages, or documentation.
 Before provisioning, make at least two encrypted or physically secured offline
 backups of `/root/.config/sops/age/keys.txt`. If every copy is lost, the SOPS
 file cannot be recovered. Test that the backup can reproduce the same public
-recipient.
+recipient and matches `.sops.yaml`.
+
+Never commit an age identity or decrypted `*.dec.yml`/`secrets.plain*` file,
+bundle it into release assets, or print it in shell traces/log captures.
+If you need stronger separation, switch to controller mode: keep the private
+identity off-Pi and stage it on the Pi only for explicit decrypt operations.
+If any identity copy is exposed, rotate it immediately, re-encrypt SOPS files,
+regenerate service secrets, and reprovision.
 
 ## 6. Create the production inventory
 

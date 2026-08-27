@@ -28,6 +28,11 @@ if git ls-files -s | awk '$1 == "120000" { found = 1 } END { exit !found }'; the
   echo "ERROR: tracked symbolic links are not permitted in release bundles" >&2
   exit 1
 fi
+forbidden_path_pattern='(^|/)(age-identity(\.txt)?|sops-age-keys\.txt|secrets\.plain(\.ya?ml)?)$|\.agekey$|\.dec\.ya?ml$'
+if git ls-files | grep -Eq "$forbidden_path_pattern"; then
+  echo "ERROR: forbidden secret filename tracked; refusing release bundle" >&2
+  exit 1
+fi
 
 mkdir -p "$output_dir"
 archive_name="openclaw-pi-${release_tag}.tar.gz"
@@ -38,6 +43,10 @@ commit_sha=$(git rev-parse HEAD)
 git archive --worktree-attributes --format=tar --prefix="openclaw-pi-${release_tag}/" \
   --output="$temporary_tar" HEAD
 gzip --no-name --best "$temporary_tar"
+if tar -tzf "$archive_path" | grep -Eq "$forbidden_path_pattern"; then
+  echo "ERROR: forbidden secret filename detected in release archive" >&2
+  exit 1
+fi
 (
   cd "$output_dir"
   sha256_file "$archive_name" > "$archive_name.sha256"

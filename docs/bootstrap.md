@@ -65,6 +65,11 @@ Back up `/root/.config/sops/age/keys.txt` securely and separately from the
 encrypted inventory immediately after installation. Do not copy its private
 contents into Git, chat, logs, or shell arguments.
 
+This installer flow is the **convenience/local mode**: the Pi holds both the
+encrypted inventory and the root-only private identity. That is easier to
+operate but weaker against full host compromise, so offline identity backups are
+mandatory.
+
 The following convenience command is intentionally similar to common upstream
 installers:
 
@@ -87,6 +92,24 @@ upgrade must target a specific version instead of the current published release.
 The remainder of this runbook describes the lower-level path for operators who
 manage inventory and age identities themselves.
 
+### SOPS custody modes
+
+- **Convenience/local mode (install.sh):** the Pi stores
+  `/root/.config/sops/age/keys.txt` and decrypts locally.
+- **Controller mode (stronger):** the private identity stays off the Pi in
+  encrypted offline custody. Keep only encrypted `secrets.sops.yml` on the Pi.
+  If a local decrypt step is unavoidable, stage the identity root-only for the
+  operation, then remove it.
+
+For both modes, verify the active recipient before provisioning:
+
+```sh
+age-keygen -y /path/to/keys.txt
+grep -n 'age1' .sops.yaml
+```
+
+The two values must match before decrypt/provision runs.
+
 ### 1. Prepare the Pi
 
 Install current 64-bit Raspberry Pi OS, enable SSH using a public key, update the
@@ -107,6 +130,9 @@ be `0700`. `secrets.sops.yml` must be valid SOPS ciphertext. If the Pi is the
 Ansible controller, install SOPS from its verified upstream release and place the
 matching age identity at `/root/.config/sops/age/keys.txt` with mode `0600`.
 Never put the identity in Git, a release asset, shell history, or logs.
+If custody changes or an identity is exposed, rotate immediately: generate a new
+identity, update `.sops.yaml` recipients, re-encrypt secrets, regenerate service
+tokens, and rerun provisioning.
 
 ### 2. Download and authenticate bootstrap
 
@@ -231,6 +257,8 @@ channel.
   `hosts.yml` path and confirm root can read it.
 - SOPS failure: confirm SOPS is installed, `secrets_file` points to the encrypted
   file, and the root-only age identity matches the configured public recipient.
+- Identity compromise response: rotate the age identity and application secrets
+  immediately, then reprovision and invalidate any leaked credentials.
 - Inference failure: test the inventory endpoint from the Pi and inspect the Mac
   firewall before rerunning.
 
