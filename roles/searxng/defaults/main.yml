@@ -1,3 +1,8 @@
 ---
 searxng_compose_dir: /opt/openclaw-compose/searxng
 searxng_config_dir: /etc/searxng
+# Set to true to allow SearXNG to bind to a non-loopback address.
+# Requires searxng_bind_address to be explicitly set to a LAN address.
+# Security: enabling this exposes SearXNG on the network. Use only when
+# you understand the implications and have appropriate firewall rules.
+searxng_allow_lan_exposure: false

@@ -1,3 +1,15 @@
-Unattended-Upgrade::Origins-Pattern { "origin=Debian,codename=${distro_codename},label=Debian-Security"; };
+Unattended-Upgrade::Origins-Pattern {
+    // Debian security updates
+    "origin=Debian,codename=${distro_codename},label=Debian-Security";
+    // Debian stable updates (bug fixes)
+    "origin=Debian,codename=${distro_codename},label=Debian";
+    // Raspberry Pi OS packages (rpi-update, firmware, kernel)
+    "origin=Raspbian,codename=${distro_codename}";
+    "origin=Raspberry Pi Foundation,codename=${distro_codename}";
+    // Docker CE packages from Docker's APT repo
+    "origin=Docker,label=Docker CE";
+    // NodeSource packages (node, npm)
+    "origin=nodesource,label=nodesource";
+};
 Unattended-Upgrade::Automatic-Reboot "{{ security_unattended_reboot | ternary('true', 'false') }}";
 Unattended-Upgrade::Automatic-Reboot-Time "{{ security_unattended_reboot_time }}";

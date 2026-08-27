@@ -15,16 +15,27 @@
 - name: Configure UFW safely
   ansible.builtin.shell: |
     set -eu
-    ufw allow {{ security_ssh_port }}/tcp comment 'SSH management'
     ufw default deny incoming
     ufw default allow outgoing
+    {% if security_ssh_allowed_cidrs | length > 0 %}
+    {% for cidr in security_ssh_allowed_cidrs %}
+    ufw allow from {{ cidr }} to any port {{ security_ssh_port }} proto tcp comment 'SSH management'
+    {% endfor %}
+    ufw delete allow {{ security_ssh_port }}/tcp 2>/dev/null || true
+    {% elif security_firewall_allow_lan_gateway | bool and ansible_default_ipv4.gateway is defined %}
+    ufw allow from {{ ansible_default_ipv4.gateway }} to any port {{ security_ssh_port }} proto tcp comment 'SSH management (LAN gateway)'
+    ufw delete allow {{ security_ssh_port }}/tcp 2>/dev/null || true
+    {% else %}
+    ufw allow {{ security_ssh_port }}/tcp comment 'SSH management'
+    {% endif %}
     ufw --force enable
   args:
-    executable: /bin/sh
+    executable: /bin/bash
   register: security_ufw_result
   changed_when: >-
     'Rules updated' in security_ufw_result.stdout or
-    'Firewall is active' not in security_ufw_result.stdout
+    'Firewall is active' not in security_ufw_result.stdout or
+    'Rule deleted' in security_ufw_result.stdout
 - name: Configure unattended upgrades
   ansible.builtin.template:
     src: 52-openclaw-unattended-upgrades.j2

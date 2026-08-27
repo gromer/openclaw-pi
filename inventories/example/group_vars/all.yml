@@ -42,6 +42,9 @@ searxng_image: >-
   ghcr.io/searxng/searxng:2026.8.20-8d3dd0cd4@sha256:9fd6172d7dcec4920273995ccd33338e4cda3093a468261a479f46a2d212723b
 searxng_bind_address: 127.0.0.1
 searxng_port: 8888
+# Explicitly opt in to exposing SearXNG on a non-loopback address.
+# Must be set to true when searxng_bind_address is not 127.0.0.1/::1/localhost.
+searxng_allow_lan_exposure: false
 restic_enabled: false
 restic_repository: ""
 restic_backup_paths:
