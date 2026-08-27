@@ -1,0 +1,8 @@
+[Unit]
+Description=Schedule OpenClaw backup freshness check
+[Timer]
+OnCalendar={{ restic_freshness_schedule }}
+Persistent=true
+RandomizedDelaySec=10m
+[Install]
+WantedBy=timers.target

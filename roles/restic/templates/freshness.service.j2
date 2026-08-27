@@ -1,0 +1,9 @@
+[Unit]
+Description=Verify OpenClaw backup freshness
+After=openclaw-backup.service
+[Service]
+Type=oneshot
+EnvironmentFile={{ restic_environment_path }}
+Environment=RESTIC_MAX_BACKUP_AGE_HOURS={{ restic_max_backup_age_hours }}
+ExecStart=/usr/local/sbin/openclaw-backup-freshness
+OnFailure=openclaw-backup-freshness-alert@%%n.service

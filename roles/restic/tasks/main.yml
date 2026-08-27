@@ -27,14 +27,22 @@
     - {src: backup.timer.j2, dest: /etc/systemd/system/openclaw-backup.timer, mode: '0644'}
     - {src: check.service.j2, dest: /etc/systemd/system/openclaw-backup-check.service, mode: '0644'}
     - {src: check.timer.j2, dest: /etc/systemd/system/openclaw-backup-check.timer, mode: '0644'}
+    - {src: freshness.service.j2, dest: /etc/systemd/system/openclaw-backup-freshness.service, mode: '0644'}
+    - {src: freshness.timer.j2, dest: /etc/systemd/system/openclaw-backup-freshness.timer, mode: '0644'}
     - {src: backup.sh.j2, dest: /usr/local/sbin/openclaw-backup, mode: '0750'}
   when: restic_enabled
   notify: Reload systemd
+- name: Install freshness helper
+  ansible.builtin.copy:
+    src: backup-freshness.sh
+    dest: /usr/local/sbin/openclaw-backup-freshness
+    mode: '0755'
+  when: restic_enabled
 - name: Enable Restic timers
   ansible.builtin.systemd_service:
     name: "{{ item }}"
     enabled: true
     state: started
     daemon_reload: true
-  loop: [openclaw-backup.timer, openclaw-backup-check.timer]
+  loop: [openclaw-backup.timer, openclaw-backup-check.timer, openclaw-backup-freshness.timer]
   when: restic_enabled
