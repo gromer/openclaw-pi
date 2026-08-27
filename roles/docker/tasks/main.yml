@@ -1,7 +1,7 @@
 ---
 - name: Install Docker repository prerequisites
   ansible.builtin.apt:
-    name: [ca-certificates, curl]
+    name: [ca-certificates, curl, gnupg]
     state: present
 - name: Create apt keyring directory
   ansible.builtin.file:
@@ -10,13 +10,19 @@
     mode: '0755'
 - name: Install Docker signing key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/debian/gpg
-    dest: /etc/apt/keyrings/docker.asc
+    url: "{{ docker_apt_key_url }}"
+    dest: "{{ docker_apt_keyring }}"
     mode: '0644'
+- name: Verify Docker signing key fingerprint
+  ansible.builtin.command:
+    argv: [gpg, --batch, --no-options, --no-default-keyring, --show-keys, --with-colons, "{{ docker_apt_keyring }}"]
+  register: docker_key_info
+  changed_when: false
+  failed_when: docker_apt_key_fingerprint not in docker_key_info.stdout
 - name: Configure official Docker repository
   ansible.builtin.apt_repository:
     repo: >-
-      deb [arch={{ docker_apt_arch }} signed-by=/etc/apt/keyrings/docker.asc]
+      deb [arch={{ docker_apt_arch }} signed-by={{ docker_apt_keyring }}]
       https://download.docker.com/linux/debian {{ ansible_distribution_release }} {{ docker_apt_channel }}
     filename: docker
     state: present

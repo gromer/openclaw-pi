@@ -289,12 +289,17 @@ Use `journalctl -u openclaw`, `docker compose -f
 `openclaw sandbox explain` for diagnosis. Never disable host-key checking or
 temporarily publish ports to troubleshoot.
 
-The sandbox image base is not digest-pinned in this repository because the
-upstream example image is built locally and the Debian digest must be reviewed
-per architecture; pin `FROM ...@sha256:` before production for fully immutable
-builds. The SearXNG example pins the verified 2026.8.20 ARM64 digest and must be
-changed deliberately for another architecture. NodeSource's setup script is downloaded over TLS but
-not independently checksum-pinned—another explicit supply-chain tradeoff.
+The provisioning supply chain is verified at each boundary: NodeSource and
+Docker repository keys are checked against their documented fingerprints, and
+the OpenClaw tarball is downloaded with lifecycle scripts disabled, hashed, and
+compared with the inventory's npm `dist.integrity` value before installation as
+the unprivileged service user. The sandbox Dockerfile pins the Debian
+bookworm-slim multi-architecture index by digest. Review these pins deliberately
+when upgrading: obtain the new NodeSource/Docker key fingerprints from their
+official documentation, obtain OpenClaw's value with `npm view
+openclaw@VERSION dist.integrity`, and obtain a new base digest with `docker
+buildx imagetools inspect debian:bookworm-slim`. Update the corresponding
+defaults/inventory value and run `make check` before provisioning.
 
 See [docs/disaster-recovery.md](docs/disaster-recovery.md) for recovery and
 [docs/validation.md](docs/validation.md) for test scope.
