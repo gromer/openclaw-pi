@@ -15,6 +15,9 @@
       - inference_backend != 'mlx_openai' or inference_base_url is match('.*/v1/?$')
       - inference_host | length > 0
       - inference_model | length > 0
+      - openclaw_npm_integrity is match('^sha512-[A-Za-z0-9+/]+=*$')
+      - openclaw_nodesource_key_fingerprint is match('^[A-F0-9]{40}$')
+      - docker_apt_key_fingerprint is match('^[A-F0-9]{40}$')
       - sandbox_network == 'none'
       - sandbox_workspace_access in ['none', 'ro']
       - openclaw_gateway_bind == 'loopback'

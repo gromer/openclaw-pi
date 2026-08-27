@@ -10,6 +10,9 @@ config = (ROOT / "roles/openclaw/templates/openclaw.json.j2").read_text()
 environment = (ROOT / "roles/openclaw/templates/environment.j2").read_text()
 unit = (ROOT / "roles/openclaw/templates/openclaw.service.j2").read_text()
 compose = (ROOT / "roles/searxng/templates/compose.yml.j2").read_text()
+sandbox_dockerfile = (ROOT / "roles/sandbox/files/Dockerfile").read_text()
+openclaw_tasks = (ROOT / "roles/openclaw/tasks/main.yml").read_text()
+docker_tasks = (ROOT / "roles/docker/tasks/main.yml").read_text()
 bootstrap = (ROOT / "bootstrap.sh").read_text()
 installer = (ROOT / "install.sh").read_text()
 release_workflow = (ROOT / ".github/workflows/release.yml").read_text()
@@ -35,6 +38,11 @@ assert "gh release create" in release_workflow
 assert "--draft --verify-tag" in release_workflow
 assert "gh release edit \"$RELEASE_TAG\" --draft=false" in release_workflow
 assert "attest-build-provenance" in release_workflow
+assert "@sha256:" in sandbox_dockerfile, "sandbox base image must be digest pinned"
+assert "setup_{{ node_major }}.x" not in openclaw_tasks, "NodeSource setup scripts must not execute as root"
+assert "openclaw_npm_integrity_actual.stdout == openclaw_npm_integrity" in openclaw_tasks
+assert "openclaw_nodesource_key_fingerprint not in openclaw_nodesource_key_info.stdout" in openclaw_tasks
+assert "docker_apt_key_fingerprint not in docker_key_info.stdout" in docker_tasks
 
 jinja_env = jinja2.Environment(undefined=jinja2.StrictUndefined)
 jinja_env.filters["to_json"] = json.dumps
