@@ -11,5 +11,5 @@ case "$SNAPSHOT" in latest|'') echo 'ERROR: select an explicit snapshot ID; late
 if [ -n "$(find "$TARGET" -mindepth 1 -maxdepth 1 -print -quit)" ] && [ "$CONFIRM" != --confirm-overwrite ]; then
   echo 'ERROR: target is non-empty; inspect it, then pass --confirm-overwrite' >&2; exit 1
 fi
-restic snapshot "$SNAPSHOT" >/dev/null
+restic snapshots "$SNAPSHOT" >/dev/null
 restic restore "$SNAPSHOT" --target "$TARGET"

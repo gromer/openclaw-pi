@@ -52,3 +52,6 @@ restic_keep_weekly: 5
 restic_keep_monthly: 12
 restic_check_schedule: "Sun *-*-* 04:30:00"
 restic_max_backup_age_hours: 36
+restic_freshness_schedule: "*-*-* 06:00:00"
+restic_sqlite_paths:
+  - /var/lib/openclaw/openclaw.db

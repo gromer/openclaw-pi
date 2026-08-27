@@ -1,7 +1,7 @@
 [Unit]
 Description=Check OpenClaw Restic repository
+After=openclaw-backup.service
 [Service]
 Type=oneshot
 EnvironmentFile={{ restic_environment_path }}
-ExecStart=/usr/bin/restic check --read-data-subset=5%%
-
+ExecStart=/usr/bin/flock -n {{ restic_lock_path }} /usr/bin/restic check --read-data-subset=5%%

@@ -86,4 +86,25 @@ env_rendered = jinja_env.from_string(environment).render(
 )
 assert 'OPENCLAW_GATEWAY_TOKEN="tok \\"quoted\\" \\\\ spaced"' in env_rendered
 assert 'INFERENCE_API_KEY="api \\"quoted\\" \\\\ key"' in env_rendered
+
+# Restore script must use the correct plural 'restic snapshots' command.
+restore_sh = (ROOT / "scripts/restore.sh").read_text()
+assert "restic snapshots" in restore_sh, "restore.sh must call 'restic snapshots' (plural)"
+assert "restic snapshot " not in restore_sh, "restore.sh must not call 'restic snapshot' (singular)"
+
+# Backup template must fail-closed on repo errors instead of always running init.
+backup_j2 = (ROOT / "roles/restic/templates/backup.sh.j2").read_text()
+assert "restic snapshots" in backup_j2, "backup.sh.j2 must probe with 'restic snapshots'"
+assert "restic_exit" in backup_j2, "backup.sh.j2 must check exit code before running restic init"
+assert "restic snapshots >/dev/null 2>&1 || restic init" not in backup_j2, \
+    "backup.sh.j2 must not unconditionally init on any snapshots failure"
+
+# Backup template must acquire a lock to serialise operations.
+assert "flock" in backup_j2, "backup.sh.j2 must use flock to serialise backup/prune"
+
+# Freshness service template must be present and reference the environment file.
+freshness_svc = (ROOT / "roles/restic/templates/freshness.service.j2").read_text()
+assert "restic_environment_path" in freshness_svc, "freshness.service.j2 must reference restic_environment_path"
+assert "openclaw-backup-freshness" in freshness_svc, "freshness.service.j2 must reference the helper script"
+
 print("static security invariants: ok")
