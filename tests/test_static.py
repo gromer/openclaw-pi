@@ -12,6 +12,7 @@ unit = (ROOT / "roles/openclaw/templates/openclaw.service.j2").read_text()
 compose = (ROOT / "roles/searxng/templates/compose.yml.j2").read_text()
 bootstrap = (ROOT / "bootstrap.sh").read_text()
 installer = (ROOT / "install.sh").read_text()
+release_workflow = (ROOT / ".github/workflows/release.yml").read_text()
 assert '"network":{{ sandbox_network | to_json }}' in config
 assert '"capDrop":["ALL"]' in config
 assert '"readOnlyRoot":true' in config
@@ -24,9 +25,16 @@ assert "openclaw-pi-${RELEASE}.tar.gz" in bootstrap
 assert "sha256sum --check" in bootstrap
 assert 'tar -tzf "$ARCHIVE_PATH"' in bootstrap
 assert "releases/latest" in installer
+assert "Selected release tag:" in installer
+assert "Selected immutable release:" not in installer
 assert "sha256sum --check bootstrap.sh.sha256" in installer
 assert "SOPS_AGE_KEY_FILE" in installer
 assert "ansible_connection: local" in installer
+assert "--clobber" not in release_workflow
+assert "gh release create" in release_workflow
+assert "--draft --verify-tag" in release_workflow
+assert "gh release edit \"$RELEASE_TAG\" --draft=false" in release_workflow
+assert "attest-build-provenance" in release_workflow
 
 jinja_env = jinja2.Environment(undefined=jinja2.StrictUndefined)
 jinja_env.filters["to_json"] = json.dumps

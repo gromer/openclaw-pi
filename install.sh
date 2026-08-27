@@ -15,11 +15,11 @@ usage() {
 Usage: sudo sh install.sh
 
 Interactive first-run installer for an Ollama-backed OpenClaw Pi gateway. It
-resolves the latest GitHub release to an immutable tag, creates a protected local
+resolves the latest GitHub release to a concrete tag, creates a protected local
 inventory when needed, and invokes the checksum-verifying release bootstrap.
 
 Environment:
-  OPENCLAW_PI_RELEASE       Optional immutable release tag instead of latest
+  OPENCLAW_PI_RELEASE       Optional release tag instead of latest
   OPENCLAW_PI_REPOSITORY    GitHub OWNER/REPO (default: gromer/openclaw-pi)
   OPENCLAW_PI_DEST          Install root (default: /opt/openclaw-pi)
   OPENCLAW_PI_INVENTORY_DIR Inventory root (default: /root/openclaw-inventory)
@@ -84,11 +84,11 @@ if [ -z "$RELEASE" ]; then
 fi
 case "$RELEASE" in
   ''|*[!A-Za-z0-9._-]*|main|master|develop|latest|HEAD)
-    echo "ERROR: GitHub did not resolve an immutable, safe release tag" >&2
+    echo "ERROR: GitHub did not resolve a safe release tag" >&2
     exit 1
     ;;
 esac
-echo "Selected immutable release: $RELEASE"
+echo "Selected release tag: $RELEASE"
 
 TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/openclaw-pi-install.XXXXXX")
 ASSET_URL="https://github.com/$REPOSITORY/releases/download/$RELEASE"
