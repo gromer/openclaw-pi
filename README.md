@@ -101,8 +101,11 @@ sudo sh install.sh
 The installer asks for the Ollama URL and exact model, reuses an existing SSH
 public key, generates age and application secrets locally, builds a root-only
 inventory, resolves `latest` to an immutable release tag, and runs the existing
-checksum-verifying bootstrap. Back up the generated age identity immediately.
-Restic remains disabled until a real repository is deliberately configured.
+checksum-verifying bootstrap. This installer is the **convenience/local SOPS
+mode**: the private age identity is generated and stored on the Pi at
+`/root/.config/sops/age/keys.txt` (root-only). Back up that identity
+immediately to encrypted offline custody. Restic remains disabled until a real
+repository is deliberately configured.
 
 Install Raspberry Pi OS 64-bit, enable SSH, create an initial administrative
 account, apply OS updates, and reserve a DHCP address. On the controller:
@@ -122,6 +125,11 @@ age-keygen -o "$HOME/.config/sops/age/keys.txt"
 make secrets-init
 ```
 
+This path is the **controller SOPS mode**: keep the private age identity off
+the Pi, commit only encrypted `*.sops.yml`, and copy only ciphertext to the Pi.
+If Ansible must decrypt on the Pi, stage the key there as a root-only temporary
+file for the run and remove it afterward.
+
 Inside the encrypted file create:
 
 ```yaml
@@ -135,7 +143,12 @@ restic_environment: "optional backend variables, one NAME=value per line"
 `.sops.yaml` deliberately contains an invalid recipient marker; no fake
 ciphertext is committed. Back up the age identity encrypted and offline in at
 least two controlled locations. The public recipient is safe to commit; the
-identity is not. Loss of every identity makes SOPS data unrecoverable.
+identity is not. Verify each backup by confirming
+`age-keygen -y <backup-copy>` matches the recipient in `.sops.yaml`. Rotate the
+recipient and re-encrypt `secrets.sops.yml` if custody changes or on a scheduled
+cadence. If any identity copy is exposed, treat all encrypted secrets as
+compromised: rotate the age identity, re-encrypt SOPS files, regenerate service
+secrets, and reprovision.
 
 ## Versioned remote bootstrap
 
@@ -159,6 +172,9 @@ sudo install -m 0600 secrets.sops.yml \
 sudo install -d -m 0700 /root/.config/sops/age
 sudo install -m 0600 keys.txt /root/.config/sops/age/keys.txt
 ```
+
+Never commit identities or decrypted files, include them in release assets, or
+print them in command traces/logs.
 
 Set the published version, then download the script and checksum as separate
 files. Do not pipe the network response directly into a root shell:
