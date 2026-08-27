@@ -44,7 +44,7 @@ jobs:
         run: |
           if is_draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft' 2>/dev/null); then
             if [ "$is_draft" != "true" ]; then
-              echo "ERROR: release $RELEASE_TAG is already published and immutable" >&2
+              echo "ERROR: release $RELEASE_TAG is already published; rebuilding is not allowed" >&2
               exit 1
             fi
             gh release delete "$RELEASE_TAG" --yes
