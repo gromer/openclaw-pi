@@ -5,7 +5,7 @@ OpenClaw runs as an unprivileged host systemd service, Docker runs isolated tool
 sandboxes, Compose runs loopback-only SearXNG, and inference remains on an M4 Pro
 Mac over the LAN.
 
-## One-paste install
+## Quick install
 
 On an updated Raspberry Pi 5 running 64-bit Raspberry Pi OS, enable SSH and make
 sure the Pi can reach an Ollama server over the LAN. Then run:
