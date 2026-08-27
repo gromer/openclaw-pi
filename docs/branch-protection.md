@@ -14,5 +14,10 @@ it does not request OIDC or attestation permissions because GitHub attestation
 is unavailable for private user-owned repositories.
 
 Review action SHAs, CI pins, and workflow changes under `.github/CODEOWNERS` during
-dependency updates. The credential-free [`actions-policy-check.sh`](../scripts/actions-policy-check.sh)
-fails CI if a workflow action, runner, or Dockerfile base image becomes mutable.
+dependency updates. The repository does not run GitHub's Dependency Review
+action because it requires Advanced Security and a Dependency Graph, which are
+not available on every private repository. Instead, credential-free
+[`actions-policy-check.sh`](../scripts/actions-policy-check.sh) and
+[`dependency-policy-check.sh`](../scripts/dependency-policy-check.sh) fail CI if
+workflow actions, runners, Dockerfile bases, or CI dependencies become mutable.
+Dependabot remains configured for monthly update pull requests.
