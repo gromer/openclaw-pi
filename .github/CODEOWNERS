@@ -1,0 +1,13 @@
+# Default owner for all files.
+* @gromer
+
+# Security-sensitive automation and release workflows.
+/.github/workflows/ @gromer
+/scripts/build-release-assets.sh @gromer
+/tests/test-release-assets.sh @gromer
+/bootstrap.sh @gromer
+/install.sh @gromer
+
+# Provisioning roles and playbooks.
+/playbooks/ @gromer
+/roles/ @gromer
