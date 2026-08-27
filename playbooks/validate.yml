@@ -20,4 +20,5 @@
       - openclaw_gateway_bind == 'loopback'
       - secrets_file | length > 0
       - not restic_enabled or (restic_repository | length > 0 and secrets_file | length > 0)
+      - searxng_bind_address in ['127.0.0.1', '::1', 'localhost'] or searxng_allow_lan_exposure | bool
     fail_msg: Inventory violates a required platform or security invariant.

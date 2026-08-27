@@ -1,4 +1,12 @@
 ---
+- name: Assert SearXNG LAN exposure is explicitly opted in
+  ansible.builtin.assert:
+    that:
+      - searxng_allow_lan_exposure | bool or searxng_bind_address in ['127.0.0.1', '::1', 'localhost']
+    fail_msg: >-
+      searxng_bind_address is set to a non-loopback address ({{ searxng_bind_address }})
+      but searxng_allow_lan_exposure is false. Set searxng_allow_lan_exposure: true
+      to confirm you intend to expose SearXNG on the network.
 - name: Create SearXNG directories
   ansible.builtin.file:
     path: "{{ item.path }}"

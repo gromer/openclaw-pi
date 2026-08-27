@@ -1,6 +1,12 @@
 ---
 security_ssh_port: 22
 security_ssh_allow_users: ["{{ admin_user }}"]
+# Optional list of CIDR ranges allowed to reach the SSH port.
+# When empty (default), SSH is permitted from any source address.
+# Example: ["192.168.1.0/24", "10.0.0.0/8"]
+security_ssh_allowed_cidrs: []
+# Allow the SSH management port from the LAN gateway (Pi's default gateway).
+# Requires the host to have ansible_default_ipv4.gateway set.
 security_firewall_allow_lan_gateway: false
 security_unattended_reboot: true
 security_unattended_reboot_time: "04:15"
