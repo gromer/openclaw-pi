@@ -190,7 +190,11 @@ if [ "$existing" -eq 0 ]; then
     --output "$TEMP_DIR/sops.checksums.txt" "$sops_url/sops-v${SOPS_VERSION}.checksums.txt"
   (
     cd "$TEMP_DIR"
-    grep "  $sops_binary\$" sops.checksums.txt | sha256sum --check -
+    checksum_line=$(awk -v bin="$sops_binary" '$2 == bin { print; found++ } END { if (found != 1) exit 1 }' sops.checksums.txt) || {
+      echo "ERROR: missing or non-unique checksum entry for $sops_binary" >&2
+      exit 1
+    }
+    printf '%s\n' "$checksum_line" | sha256sum --check -
   )
   install -o root -g root -m 0755 "$TEMP_DIR/$sops_binary" /usr/local/bin/sops
 
@@ -253,6 +257,8 @@ else
     echo "ERROR: existing inventory requires the age identity at $AGE_KEY_FILE" >&2
     exit 1
   }
+  admin_user=$(awk -F': *' '/^admin_user:/{print $2; exit}' "$ALL_FILE" 2>/dev/null || true)
+  admin_user=${admin_user:-${SUDO_USER:-root}}
 fi
 
 SOPS_AGE_KEY_FILE=$AGE_KEY_FILE \
