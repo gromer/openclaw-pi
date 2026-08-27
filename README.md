@@ -45,6 +45,23 @@ Git-managed configuration is reconstructible. `/var/lib/openclaw` contains
 private mutable workspace, SQLite state, sessions, and credentials and is the
 default Restic backup selection. Never commit that tree.
 
+## Repository map
+
+- [`inventories/example`](inventories/example/) contains safe illustrative host
+  and variable examples. Copy it to the ignored `inventories/production/` tree
+  and replace every example value before use.
+- [`playbooks/site.yml`](playbooks/site.yml) provisions the gateway;
+  [`playbooks/verify.yml`](playbooks/verify.yml) runs post-provision checks.
+- [`roles/`](roles/) owns the base system, users, firewall, Docker, OpenClaw,
+  sandbox, SearXNG, Restic, and verification configuration.
+- [`compose/searxng`](compose/searxng/) and [`openclaw/`](openclaw/) contain
+  intentional Git-managed service and workspace files; mutable runtime data is
+  kept outside the repository.
+- [`docs/`](docs/) contains the [bootstrap runbook](docs/bootstrap.md),
+  [fresh-Pi/Ollama guide](docs/getting-started-ollama.md),
+  [validation scope](docs/validation.md), and
+  [disaster-recovery runbook](docs/disaster-recovery.md).
+
 ## Supported platform and verified upstream contract
 
 The target is current 64-bit Raspberry Pi OS (Debian-family) on Pi 5. OpenClaw
@@ -87,7 +104,8 @@ release assets before running it:
 These URLs require a release containing `install.sh`; merging this feature alone
 does not add assets to an older release.
 Releases `v1.0.0` through `v1.2.0` predate immutable-release hardening and are
-superseded; use `v1.2.2` or newer for production installations.
+superseded; use `v1.2.3` or a newer published release for production
+installations.
 
 ```sh
 mkdir -p "$HOME/openclaw-install" && cd "$HOME/openclaw-install"
@@ -218,7 +236,7 @@ sudo OPENCLAW_PI_RELEASE="$RELEASE" \
 
 Public release assets need no GitHub credentials even if the operator has no Git
 checkout. Private-release downloads require an authenticated distribution step;
-mirror all six assets to a controlled HTTPS origin and set
+mirror all release assets to a controlled HTTPS origin and set
 `OPENCLAW_PI_ASSET_BASE_URL`. Never put tokens, SOPS values, Restic passwords, or
 age identities in command-line flags or bootstrap environment values. See
 [the complete bootstrap guide](docs/bootstrap.md) for argument behavior,
@@ -251,8 +269,16 @@ make preflight
 make diff
 make provision
 make verify
+make secrets-check
+make backup-check
 ssh -N -L 18789:127.0.0.1:18789 piadmin@PI
 ```
+
+Run `make help` for the complete interface, including `make syntax`, `make
+lint`, `make backup`, and the guarded `make restore` target. The
+[validation guide](docs/validation.md) explains which checks are
+credential-free and which require the actual Pi, inference host, or Restic
+repository.
 
 Open `http://127.0.0.1:18789` after the tunnel is established. Upgrade by changing
 reviewed pins, running `make check`, then `make diff` and `make provision`.
@@ -303,3 +329,8 @@ defaults/inventory value and run `make check` before provisioning.
 
 See [docs/disaster-recovery.md](docs/disaster-recovery.md) for recovery and
 [docs/validation.md](docs/validation.md) for test scope.
+
+Contribution workflow and repository invariants are documented in
+[`AGENTS.md`](AGENTS.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md). See
+[`SECURITY.md`](SECURITY.md) for vulnerability reporting and security
+boundaries.
