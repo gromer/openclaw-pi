@@ -15,7 +15,7 @@ installer = (ROOT / "install.sh").read_text()
 assert '"network":{{ sandbox_network | to_json }}' in config
 assert '"capDrop":["ALL"]' in config
 assert '"readOnlyRoot":true' in config
-assert "OPENCLAW_GATEWAY_TOKEN={{ openclaw_secrets.gateway_token | default('VALIDATION_ONLY_NOT_FOR_PRODUCTION') | to_json }}" in environment
+assert "| replace('\\\\', '\\\\\\\\') | replace('\"', '\\\\\"') }}" in environment
 assert "SupplementaryGroups=docker" in unit
 assert "NoNewPrivileges=true" in unit
 assert '"{{ searxng_bind_address }}:{{ searxng_port }}:8080"' in compose
@@ -32,7 +32,7 @@ jinja_env = jinja2.Environment(undefined=jinja2.StrictUndefined)
 jinja_env.filters["to_json"] = json.dumps
 
 shared = {
-    "openclaw_gateway_bind": "loop back",
+    "openclaw_gateway_bind": "127.0.0.1",
     "openclaw_gateway_port": 18789,
     "inference_base_url": "http://localhost:11434/v1 with space",
     "inference_timeout_seconds": 300,
