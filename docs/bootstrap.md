@@ -20,6 +20,9 @@ release-manifest.json
 release-manifest.json.sha256
 ```
 
+GitHub also records artifact attestations for these assets during release
+publication.
+
 The tarball contains the Ansible configuration, roles, Compose files, scripts,
 tests, examples, and documentation. It excludes GitHub workflow metadata and all
 untracked production data. The manifest identifies the tag, source commit,
@@ -32,6 +35,8 @@ reachable over the LAN. Download the latest published installer and checksum:
 
 The release must have been published from a version containing `install.sh`.
 GitHub does not retroactively add these assets to an older latest release.
+Releases `v1.0.0` through `v1.2.0` predate immutable-release hardening and are
+superseded; use `v1.2.2` or newer for production installations.
 
 ```sh
 mkdir -p "$HOME/openclaw-install" && cd "$HOME/openclaw-install"
@@ -53,7 +58,7 @@ The installer reads prompts from the terminal even when its script input is a
 pipe. It asks only for the administrative account/key when they cannot be
 inferred, the Ollama URL, and the exact advertised model. It then:
 
-- resolves GitHub's `latest` redirect to an immutable tag and records that tag;
+- resolves GitHub's `latest` redirect to a published tag and records that tag;
 - independently verifies that tag's bootstrap and release-bundle checksums;
 - creates `/root/openclaw-inventory` with mode `0700` and files with mode `0600`;
 - installs the pinned SOPS binary after checking its upstream checksum;
@@ -84,7 +89,7 @@ workflow for production or any environment with meaningful credentials.
 
 If all three inventory files already exist, rerunning the installer reuses them
 instead of replacing them. A partial inventory is rejected. Set
-`OPENCLAW_PI_RELEASE` to an immutable tag before running the installer when an
+`OPENCLAW_PI_RELEASE` to a published release tag before running the installer when an
 upgrade must target a specific version instead of the current published release.
 
 ## Manual bootstrap workflow
@@ -216,7 +221,7 @@ whose content differs.
 
 To upgrade, download the new release's `bootstrap.sh` and checksum, verify them,
 and run with the new tag. To roll back code, rerun the bootstrap from the older
-release with that older immutable tag. Ansible may not reverse data migrations;
+release with that older published tag. Ansible may not reverse data migrations;
 restore mutable state from Restic when the release notes require it.
 
 ## Mirrors and private releases
