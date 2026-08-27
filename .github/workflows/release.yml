@@ -12,15 +12,14 @@ on:
         type: string
 permissions:
   contents: write
-  attestations: write
-  id-token: write
 jobs:
   assets:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    environment: release
     env:
       RELEASE_TAG: "${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           ref: "${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
           fetch-depth: 0
@@ -68,18 +67,6 @@ jobs:
             "dist/openclaw-pi-${RELEASE_TAG}.tar.gz" \
             "dist/openclaw-pi-${RELEASE_TAG}.tar.gz.sha256" \
             dist/release-manifest.json \
-            dist/release-manifest.json.sha256
-      - name: Attest release assets
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: |
-            dist/bootstrap.sh
-            dist/bootstrap.sh.sha256
-            dist/install.sh
-            dist/install.sh.sha256
-            dist/openclaw-pi-${{ env.RELEASE_TAG }}.tar.gz
-            dist/openclaw-pi-${{ env.RELEASE_TAG }}.tar.gz.sha256
-            dist/release-manifest.json
             dist/release-manifest.json.sha256
       - name: Publish release
         env:

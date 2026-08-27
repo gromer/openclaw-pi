@@ -3,7 +3,7 @@ INVENTORY ?= inventories/production/hosts.yml
 PLAYBOOK ?= playbooks/site.yml
 ANSIBLE_ARGS ?=
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap deps preflight provision validate check syntax lint diff verify backup restore secrets-init secrets-edit secrets-check backup-check compose-check release-test
+.PHONY: help bootstrap deps preflight provision validate check syntax lint diff verify backup restore secrets-init secrets-edit secrets-check dependency-policy-check backup-check compose-check release-test actions-policy-check
 help: ## Show targets
 	@awk 'BEGIN{FS=":.*## "}/^[a-zA-Z0-9_-]+:.*## /{printf "%-18s %s\n",$$1,$$2}' $(MAKEFILE_LIST)
 bootstrap: ## Validate the bootstrap script locally
@@ -15,9 +15,13 @@ preflight: ## Check controller prerequisites
 	./scripts/preflight.sh
 provision: ## Provision the production inventory
 	ansible-playbook -i $(INVENTORY) $(PLAYBOOK) $(ANSIBLE_ARGS)
-validate: syntax compose-check secrets-check release-test ## Run credential-free structural validation
+validate: syntax compose-check secrets-check actions-policy-check dependency-policy-check release-test ## Run credential-free structural validation
 	python3 scripts/validate-vars.py
 	python3 tests/test_static.py
+actions-policy-check: ## Check immutable CI actions, runners, and image pins
+	./scripts/actions-policy-check.sh
+dependency-policy-check: ## Check that CI dependencies remain exactly pinned
+	./scripts/dependency-policy-check.sh
 check: validate lint bootstrap ## Run all local static checks
 syntax: ## Run Ansible syntax check against safe example inventory
 	ansible-playbook -i inventories/example/hosts.yml $(PLAYBOOK) --syntax-check
