@@ -30,6 +30,9 @@ archive name, and archive SHA-256.
 Use this route for a fresh Pi with SSH already enabled and an Ollama server
 reachable over the LAN. Download the latest published installer and checksum:
 
+The release must have been published from a version containing `install.sh`.
+GitHub does not retroactively add these assets to an older latest release.
+
 ```sh
 mkdir -p "$HOME/openclaw-install" && cd "$HOME/openclaw-install"
 curl --fail --silent --show-error --location --remote-name \

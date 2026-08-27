@@ -64,6 +64,9 @@ For a fresh Pi that already has SSH access and can reach Ollama, the recommended
 installer flow downloads the latest installer and its checksum as separate
 release assets before running it:
 
+These URLs require a release containing `install.sh`; merging this feature alone
+does not add assets to an older release.
+
 ```sh
 mkdir -p "$HOME/openclaw-install" && cd "$HOME/openclaw-install"
 curl --fail --silent --show-error --location --remote-name \

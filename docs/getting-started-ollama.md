@@ -19,6 +19,9 @@ Commands marked **workstation** run on your laptop or desktop. Commands marked
 After completing the SSH setup in sections 1 and 2, the guided installer can do
 the remaining initial configuration. The recommended checksum-verified flow is:
 
+This requires a newly published release that includes the installer assets;
+merging the installer code does not alter an existing release.
+
 ```sh
 mkdir -p "$HOME/openclaw-install" && cd "$HOME/openclaw-install"
 curl -fsSLO https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh
