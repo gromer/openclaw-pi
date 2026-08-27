@@ -5,6 +5,26 @@ OpenClaw runs as an unprivileged host systemd service, Docker runs isolated tool
 sandboxes, Compose runs loopback-only SearXNG, and inference remains on an M4 Pro
 Mac over the LAN.
 
+## One-paste install
+
+On an updated Raspberry Pi 5 running 64-bit Raspberry Pi OS, enable SSH and make
+sure the Pi can reach an Ollama server over the LAN. Then run:
+
+```sh
+curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
+```
+
+The guided installer selects the latest published release, pins it to an
+immutable tag, verifies the bootstrap and Ansible bundle checksums, reuses an
+existing SSH public key, and prompts for the Ollama URL and exact model. It
+generates the age identity and encrypted service secrets locally. Back up the
+age identity securely as soon as installation finishes.
+
+This convenience command executes network-delivered code as root before you can
+inspect or independently verify the installer. For production, use the
+[checksum-verified installation](#initial-setup) or the detailed
+[bootstrap runbook](docs/bootstrap.md).
+
 ## Architecture and trust boundaries
 
 The gateway and SearXNG listen on loopback; administer them through SSH port
@@ -83,17 +103,6 @@ public key, generates age and application secrets locally, builds a root-only
 inventory, resolves `latest` to an immutable release tag, and runs the existing
 checksum-verifying bootstrap. Back up the generated age identity immediately.
 Restic remains disabled until a real repository is deliberately configured.
-
-For convenience, this single paste downloads and executes the latest installer:
-
-```sh
-curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
-```
-
-The one-liner cannot authenticate or inspect the installer before execution and
-therefore has a weaker trust boundary than the checksum-verified flow. The
-installer still pins the resolved release and verifies the bootstrap and Ansible
-bundle checksums. Use the verified flow for production.
 
 Install Raspberry Pi OS 64-bit, enable SSH, create an initial administrative
 account, apply OS updates, and reserve a DHCP address. On the controller:
