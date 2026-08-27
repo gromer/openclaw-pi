@@ -69,8 +69,7 @@ The following convenience command is intentionally similar to common upstream
 installers:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -fsSL \
-  https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
+curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
 ```
 
 This is a single paste, but it executes network-delivered code as root before

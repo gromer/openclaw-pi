@@ -41,8 +41,7 @@ For a convenience-first installation, accepting that network-delivered code is
 executed as root before separate checksum inspection:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -fsSL \
-  https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
+curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
 ```
 
 The rest of this guide remains the fully manual, auditable workflow.

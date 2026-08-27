@@ -87,8 +87,7 @@ Restic remains disabled until a real repository is deliberately configured.
 For convenience, this single paste downloads and executes the latest installer:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -fsSL \
-  https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
+curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
 ```
 
 The one-liner cannot authenticate or inspect the installer before execution and
