@@ -32,6 +32,12 @@
     group: root
     mode: '0644'
     state: file
+- name: Verify NodeSource apt keyring fingerprint
+  ansible.builtin.command:
+    argv: [gpg, --batch, --no-options, --no-default-keyring, --show-keys, --with-colons, "{{ openclaw_nodesource_keyring }}"]
+  register: openclaw_nodesource_keyring_info
+  changed_when: false
+  failed_when: openclaw_nodesource_key_fingerprint not in openclaw_nodesource_keyring_info.stdout
 - name: Configure verified NodeSource repository
   ansible.builtin.apt_repository:
     repo: >-
