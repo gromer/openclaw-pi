@@ -219,6 +219,10 @@ implements `/v1/models` and `/v1/chat/completions`. Bind it to the LAN address,
 require a token where supported, and restrict the port to the Pi. Set
 `inference_backend: mlx_openai`, a base ending in `/v1`, its exact advertised
 model ID, and `inference_api_key` in SOPS. Never expose either service publicly.
+Current role wiring keeps provider secrets in a root-owned systemd
+`EnvironmentFile`; OpenClaw SecretRefs/systemd credentials were evaluated but are
+not configured here because upstream provider auth still expects environment
+variables.
 
 ## Operations
 
