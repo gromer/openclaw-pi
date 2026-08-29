@@ -55,6 +55,8 @@ shared = {
     "inference_model": 'model "quoted" \\ and spaced',
     "inference_context_window": 32768,
     "inference_max_tokens": 8192,
+    "openrouter_model_ref": "openrouter/auto-beta",
+    "openrouter_model_name": "OpenRouter Auto (Beta)",
     "openclaw_workspace_dir": "/var/lib/openclaw/work space",
     "sandbox_mode": "all",
     "sandbox_scope": "agent scope",
@@ -81,6 +83,7 @@ mlx_config = json.loads(mlx_rendered)
 assert mlx_provider in mlx_config["models"]["providers"]
 assert mlx_config["models"]["providers"][mlx_provider]["models"][0]["id"] == shared["inference_model"]
 assert mlx_config["agents"]["defaults"]["model"]["primary"] == f"{mlx_provider}/{shared['inference_model']}"
+assert f"{mlx_provider}/{shared['inference_model']}" in mlx_config["agents"]["defaults"]["models"]
 
 ollama_rendered = jinja_env.from_string(config).render(
     {
@@ -91,17 +94,28 @@ ollama_rendered = jinja_env.from_string(config).render(
 )
 ollama_config = json.loads(ollama_rendered)
 assert ollama_config["models"]["providers"]["ollama"]["models"][0]["name"] == shared["inference_model"]
+assert f"ollama/{shared['inference_model']}" in ollama_config["agents"]["defaults"]["models"]
+
+for rendered_config in (mlx_config, ollama_config):
+    openrouter_model = rendered_config["models"]["providers"]["openrouter"]["models"][0]
+    assert openrouter_model["id"] == "openrouter/auto-beta"
+    assert openrouter_model["name"] == "OpenRouter Auto (Beta)"
+    assert rendered_config["agents"]["defaults"]["models"][
+        "openrouter/auto-beta"
+    ]["alias"] == "OpenRouter Auto (Beta)"
 
 env_rendered = jinja_env.from_string(environment).render(
     {
         "openclaw_secrets": {
             "gateway_token": 'tok "quoted" \\ spaced',
             "inference_api_key": 'api "quoted" \\ key',
+            "openrouter_api_key": 'router "quoted" \\ key',
         }
     }
 )
 assert 'OPENCLAW_GATEWAY_TOKEN="tok \\"quoted\\" \\\\ spaced"' in env_rendered
 assert 'INFERENCE_API_KEY="api \\"quoted\\" \\\\ key"' in env_rendered
+assert 'OPENROUTER_API_KEY="router \\"quoted\\" \\\\ key"' in env_rendered
 
 # Restore script must use the correct plural 'restic snapshots' command.
 restore_sh = (ROOT / "scripts/restore.sh").read_text()
