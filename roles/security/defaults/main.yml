@@ -8,5 +8,7 @@ security_ssh_allowed_cidrs: []
 # Allow the SSH management port from the LAN gateway (Pi's default gateway).
 # Requires the host to have ansible_default_ipv4.gateway set.
 security_firewall_allow_lan_gateway: false
+# Sources allowed to reach the OpenClaw gateway when it binds to the LAN.
+security_gateway_allowed_cidrs: []
 security_unattended_reboot: true
 security_unattended_reboot_time: "04:15"

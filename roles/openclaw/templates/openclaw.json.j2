@@ -1,5 +1,5 @@
 {
-  "gateway":{"mode":"local","bind":{{ openclaw_gateway_bind | to_json }},"port":{{ openclaw_gateway_port }},"auth":{"mode":"token","token":"${OPENCLAW_GATEWAY_TOKEN}"}},
+  "gateway":{"mode":"local","bind":{{ openclaw_gateway_bind | to_json }},"port":{{ openclaw_gateway_port }},"auth":{"mode":"token","token":"${OPENCLAW_GATEWAY_TOKEN}"},"controlUi":{"allowedOrigins":{{ openclaw_control_ui_allowed_origins | to_json }}}},
   "models":{"mode":"merge","providers":{
 {% if inference_backend == 'ollama' %}
     "ollama":{"baseUrl":{{ inference_base_url | to_json }},"apiKey":"ollama-local","api":"ollama","timeoutSeconds":{{ inference_timeout_seconds }},"models":[{"id":{{ inference_model | to_json }},"name":{{ inference_model | to_json }},"contextWindow":{{ inference_context_window }},"maxTokens":{{ inference_max_tokens }}}]},

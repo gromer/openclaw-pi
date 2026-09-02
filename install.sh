@@ -272,4 +272,4 @@ echo
 echo "Installation complete from $RELEASE."
 echo "Inventory: $INVENTORY_DIR"
 echo "Verify: systemctl status openclaw docker --no-pager"
-echo "Dashboard tunnel: ssh -L 18789:127.0.0.1:18789 $admin_user@$(hostname)"
+echo "Dashboard: http://$(hostname).local:18789 (from the allowed LAN)"

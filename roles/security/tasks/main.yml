@@ -3,6 +3,13 @@
   ansible.builtin.apt:
     name: [ufw, unattended-upgrades]
     state: present
+- name: Validate firewall source CIDRs
+  ansible.builtin.assert:
+    that:
+      - item is string
+      - item is match('^[0-9.]+/[0-9.]+$')
+    fail_msg: "Firewall source must be an IPv4 CIDR, not {{ item | to_json }}."
+  loop: "{{ (security_ssh_allowed_cidrs + security_gateway_allowed_cidrs) | unique }}"
 - name: Render SSH hardening drop-in
   ansible.builtin.template:
     src: 50-openclaw-hardening.conf.j2
@@ -27,6 +34,11 @@
     ufw delete allow {{ security_ssh_port }}/tcp 2>/dev/null || true
     {% else %}
     ufw allow {{ security_ssh_port }}/tcp comment 'SSH management'
+    {% endif %}
+    {% if openclaw_gateway_bind == 'lan' %}
+    {% for cidr in security_gateway_allowed_cidrs %}
+    ufw allow from {{ cidr }} to any port {{ openclaw_gateway_port }} proto tcp comment 'OpenClaw gateway'
+    {% endfor %}
     {% endif %}
     ufw --force enable
   args:

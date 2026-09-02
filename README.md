@@ -27,11 +27,19 @@ inspect or independently verify the installer. For production, use the
 
 ## Architecture and trust boundaries
 
-The gateway and SearXNG listen on loopback; administer them through SSH port
-forwarding. OpenClaw connects only to the inventory-selected Mac endpoint. Tool
-sandboxes use network `none`, read-only roots, tmpfs scratch space, no devices or
-host namespaces, all capabilities dropped, and CPU/memory/PID/file-descriptor
-limits. Workspace access defaults to `none`.
+The OpenClaw gateway listens on the LAN by default with token authentication;
+UFW limits port 18789 to the inventory-selected LAN CIDRs and the Control UI
+accepts only inventory-selected origins. SearXNG remains loopback-only. Treat
+every allowed client and network as trusted, and never port-forward the gateway
+from an internet-facing router. OpenClaw connects only to the inventory-selected
+Mac endpoint. Tool sandboxes use network `none`, read-only roots, tmpfs scratch
+space, no devices or host namespaces, all capabilities dropped, and
+CPU/memory/PID/file-descriptor limits. Workspace access defaults to `none`.
+
+Change `security_gateway_allowed_cidrs` to a tighter list when only particular
+LAN segments should connect. Every URL used to open the dashboard must also
+appear in `openclaw_control_ui_allowed_origins`; the example inventory derives
+the Pi's current IPv4 URL and adds its `.local` hostname.
 
 **Critical limitation:** OpenClaw's verified Docker backend invokes the Docker
 CLI and therefore the `openclaw` account is in the Docker group. Docker daemon
@@ -277,7 +285,6 @@ make provision
 make verify
 make secrets-check
 make backup-check
-ssh -N -L 18789:127.0.0.1:18789 piadmin@PI
 ```
 
 Run `make help` for the complete interface, including `make syntax`, `make
@@ -286,8 +293,8 @@ lint`, `make backup`, and the guarded `make restore` target. The
 credential-free and which require the actual Pi, inference host, or Restic
 repository.
 
-Open `http://127.0.0.1:18789` after the tunnel is established. Upgrade by changing
-reviewed pins, running `make check`, then `make diff` and `make provision`.
+Open `http://openclaw-pi.local:18789` from an allowed LAN client. Upgrade by
+changing reviewed pins, running `make check`, then `make diff` and `make provision`.
 Hardware verification checks service health and inspects any existing sandbox
 containers for obvious isolation regressions. Provisioning installs Docker
 Engine, the Docker CLI, Buildx, and Compose from Docker's official Debian
@@ -316,9 +323,10 @@ should be reprovisioned, not restored.
 
 ## Firewall, troubleshooting, and security
 
-UFW permits SSH before default-deny is enabled. Gateway and SearXNG LAN exposure
-are rejected by inventory validation. Verify inference DNS/address, Mac firewall,
-and `/api/tags` or `/v1/models` if provisioning stops before OpenClaw restart.
+UFW permits SSH and the inventory-selected gateway LAN CIDRs before default-deny
+is enabled. SearXNG LAN exposure is rejected unless explicitly opted in. Verify
+inference DNS/address, Mac firewall, and `/api/tags` or `/v1/models` if
+provisioning stops before OpenClaw restart.
 Use `journalctl -u openclaw`, `docker compose -f
 /opt/openclaw-compose/searxng/compose.yml logs`, `openclaw config validate`, and
 `openclaw sandbox explain` for diagnosis. Never disable host-key checking or
