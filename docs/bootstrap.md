@@ -119,7 +119,8 @@ The two values must match before decrypt/provision runs.
 
 Install current 64-bit Raspberry Pi OS, enable SSH using a public key, update the
 OS, and confirm at least 4 GiB is free. The bootstrap independently verifies root
-privileges, Raspberry Pi 5 hardware, `aarch64`, Raspberry Pi OS, and free space.
+privileges, Raspberry Pi 5 hardware, `aarch64`, a Raspberry Pi OS identifier of
+`debian` or `raspbian`, and free space.
 
 The release intentionally excludes production inventory. Transfer these files
 to the Pi over a trusted channel:
