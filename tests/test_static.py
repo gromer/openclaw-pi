@@ -62,6 +62,11 @@ assert 'become_user: "{{ openclaw_user }}"' in docker_tasks, \
 assert "openclaw_gateway_bind: lan" in example_inventory
 assert "security_gateway_allowed_cidrs:" in example_inventory
 assert "to any port {{ openclaw_gateway_port }}" in security_tasks
+verification_tasks = (ROOT / "roles/verification/tasks/main.yml").read_text()
+common_tasks = (ROOT / "roles/common/tasks/main.yml").read_text()
+assert "retries: 12" in verification_tasks
+assert "until: verification_searxng_health.status == 200" in verification_tasks
+assert "127.0.1.1 {{ pi_hostname }}" in common_tasks
 
 jinja_env = jinja2.Environment(undefined=jinja2.StrictUndefined)
 jinja_env.filters["to_json"] = json.dumps

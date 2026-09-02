@@ -2,6 +2,15 @@
 - name: Set hostname
   ansible.builtin.hostname:
     name: "{{ pi_hostname }}"
+- name: Resolve configured hostname locally
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\\.0\\.1\\.1\\s+'
+    line: "127.0.1.1 {{ pi_hostname }}"
+    owner: root
+    group: root
+    mode: '0644'
+    create: false
 - name: Inspect configured timezone
   ansible.builtin.command: timedatectl show --property=Timezone --value
   register: common_current_timezone
