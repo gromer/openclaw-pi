@@ -50,6 +50,7 @@ assert "@sha256:" in sandbox_dockerfile, "sandbox base image must be digest pinn
 assert "setup_{{ node_major }}.x" not in openclaw_tasks, "NodeSource setup scripts must not execute as root"
 assert "openclaw_npm_integrity_actual.stdout == openclaw_npm_integrity" in openclaw_tasks
 assert "openclaw_nodesource_key_fingerprint not in openclaw_nodesource_key_info.stdout" in openclaw_tasks
+assert "6F71F525282841EEDAF851B42F59B5F99B1BE0B4" in (ROOT / "roles/openclaw/defaults/main.yml").read_text()
 assert "docker_apt_key_fingerprint not in docker_key_info.stdout" in docker_tasks
 assert "--homedir" in docker_tasks, "Docker key verification must not depend on root's home"
 assert "--homedir" in openclaw_tasks, "NodeSource key verification must not depend on root's home"
