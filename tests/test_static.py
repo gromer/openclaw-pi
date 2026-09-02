@@ -22,6 +22,7 @@ assert '"network":{{ sandbox_network | to_json }}' in config
 assert '"capDrop":["ALL"]' in config
 assert '"readOnlyRoot":true' in config
 assert '"allowedOrigins":{{ openclaw_control_ui_allowed_origins | to_json }}' in config
+assert 'dest: /usr/local/bin/openclaw' in openclaw_tasks
 assert "| replace('\\\\', '\\\\\\\\') | replace('\"', '\\\\\"') }}" in environment
 assert "SupplementaryGroups=docker" in unit
 assert "NoNewPrivileges=true" in unit
@@ -105,6 +106,8 @@ mlx_rendered = jinja_env.from_string(config).render(
     }
 )
 mlx_config = json.loads(mlx_rendered)
+assert mlx_config["controlUi"]["allowedOrigins"] == shared["openclaw_control_ui_allowed_origins"]
+assert "controlUi" not in mlx_config["gateway"]
 assert mlx_provider in mlx_config["models"]["providers"]
 assert mlx_config["models"]["providers"][mlx_provider]["models"][0]["id"] == shared["inference_model"]
 assert mlx_config["agents"]["defaults"]["model"]["primary"] == f"{mlx_provider}/{shared['inference_model']}"
