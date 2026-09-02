@@ -92,10 +92,13 @@ ASSET_BASE_URL=${ASSET_BASE_URL%/}
 [ -r /etc/os-release ] || { echo "ERROR: /etc/os-release missing" >&2; exit 1; }
 # shellcheck disable=SC1091
 . /etc/os-release
-[ "${ID:-}" = raspbian ] || [ "${ID_LIKE:-}" = debian ] || {
-  echo "ERROR: Raspberry Pi OS required" >&2
-  exit 1
-}
+case " ${ID:-} ${ID_LIKE:-} " in
+  *" debian "*|*" raspbian "*) ;;
+  *)
+    echo "ERROR: Raspberry Pi OS (Debian family) required" >&2
+    exit 1
+    ;;
+esac
 [ "$(uname -m)" = aarch64 ] || { echo "ERROR: 64-bit ARM (aarch64) required" >&2; exit 1; }
 grep -Eq 'Raspberry Pi 5|BCM2712' /proc/device-tree/model /proc/cpuinfo 2>/dev/null || {
   echo "ERROR: Raspberry Pi 5 hardware not detected" >&2

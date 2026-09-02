@@ -29,6 +29,8 @@ assert '"{{ searxng_bind_address }}:{{ searxng_port }}:8080"' in compose
 assert "git clone" not in bootstrap
 assert "openclaw-pi-${RELEASE}.tar.gz" in bootstrap
 assert "sha256sum --check" in bootstrap
+assert 'case " ${ID:-} ${ID_LIKE:-} " in' in bootstrap
+assert '*" debian "*|*" raspbian "*)' in bootstrap
 assert 'tar -tzf "$ARCHIVE_PATH"' in bootstrap
 assert "releases/latest" in installer
 assert "Selected release tag:" in installer
@@ -40,7 +42,8 @@ assert "--clobber" not in release_workflow
 assert "gh release create" in release_workflow
 assert "--draft --verify-tag" in release_workflow
 assert "gh release edit \"$RELEASE_TAG\" --draft=false" in release_workflow
-assert "attest-build-provenance" in release_workflow
+assert "dist/release-manifest.json" in release_workflow
+assert "dist/release-manifest.json.sha256" in release_workflow
 assert "@sha256:" in sandbox_dockerfile, "sandbox base image must be digest pinned"
 assert "setup_{{ node_major }}.x" not in openclaw_tasks, "NodeSource setup scripts must not execute as root"
 assert "openclaw_npm_integrity_actual.stdout == openclaw_npm_integrity" in openclaw_tasks
