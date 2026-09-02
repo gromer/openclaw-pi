@@ -337,9 +337,10 @@ Docker repository keys are checked against their documented fingerprints, and
 the OpenClaw tarball is downloaded with lifecycle scripts disabled, hashed, and
 compared with the inventory's npm `dist.integrity` value before installation as
 the unprivileged service user. The sandbox Dockerfile pins the Debian
-bookworm-slim multi-architecture index by digest. Review these pins deliberately
-when upgrading: obtain the new NodeSource/Docker key fingerprints from their
-official documentation, obtain OpenClaw's value with `npm view
+bookworm-slim multi-architecture index by digest. NodeSource's repository key is
+pinned to its current fingerprint (`6F71F525282841EEDAF851B42F59B5F99B1BE0B4`).
+Review these pins deliberately when upgrading: obtain the new NodeSource/Docker
+key fingerprints from their official documentation, obtain OpenClaw's value with `npm view
 openclaw@VERSION dist.integrity`, and obtain a new base digest with `docker
 buildx imagetools inspect debian:bookworm-slim`. Update the corresponding
 defaults/inventory value and run `make check` before provisioning.
