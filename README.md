@@ -295,6 +295,8 @@ repository.
 
 Open `http://openclaw-pi.local:18789` from an allowed LAN client. Upgrade by
 changing reviewed pins, running `make check`, then `make diff` and `make provision`.
+The `openclaw` CLI is installed at `/usr/local/bin/openclaw`; use
+`openclaw gateway status` and `openclaw config validate` for local diagnostics.
 Hardware verification checks service health and inspects any existing sandbox
 containers for obvious isolation regressions. Provisioning installs Docker
 Engine, the Docker CLI, Buildx, and Compose from Docker's official Debian

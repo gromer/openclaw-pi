@@ -165,6 +165,14 @@
         path: "{{ openclaw_npm_download_dir.path }}"
         state: absent
       when: openclaw_npm_download_dir.path is defined
+- name: Expose OpenClaw CLI system-wide
+  ansible.builtin.file:
+    src: "{{ openclaw_npm_prefix }}/bin/openclaw"
+    dest: /usr/local/bin/openclaw
+    state: link
+    owner: root
+    group: root
+    force: true
 - name: Decrypt production secrets in memory
   ansible.builtin.command: "sops --decrypt --output-type yaml {{ secrets_file }}"
   delegate_to: localhost

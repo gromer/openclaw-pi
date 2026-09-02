@@ -446,6 +446,13 @@ sudo env \
 Copy only the `gateway_token` value into the dashboard, then exit the editor
 without changing the file.
 
+For local diagnostics on the Pi, the `openclaw` CLI is available system-wide:
+
+```sh
+openclaw gateway status
+openclaw config validate
+```
+
 ## 12. After the first successful login
 
 - Store the production inventory and encrypted SOPS file in protected backup
