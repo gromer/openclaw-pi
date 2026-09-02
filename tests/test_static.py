@@ -106,8 +106,7 @@ mlx_rendered = jinja_env.from_string(config).render(
     }
 )
 mlx_config = json.loads(mlx_rendered)
-assert mlx_config["controlUi"]["allowedOrigins"] == shared["openclaw_control_ui_allowed_origins"]
-assert "controlUi" not in mlx_config["gateway"]
+assert mlx_config["gateway"]["controlUi"]["allowedOrigins"] == shared["openclaw_control_ui_allowed_origins"]
 assert mlx_provider in mlx_config["models"]["providers"]
 assert mlx_config["models"]["providers"][mlx_provider]["models"][0]["id"] == shared["inference_model"]
 assert mlx_config["agents"]["defaults"]["model"]["primary"] == f"{mlx_provider}/{shared['inference_model']}"
