@@ -421,6 +421,11 @@ curl --fail http://127.0.0.1:8888/healthz
 sudo journalctl -u openclaw --no-pager -n 100
 ```
 
+Provisioning installs and starts Docker automatically. It also verifies the
+Docker daemon, Buildx, and Compose as the `openclaw` service account before it
+builds the agent sandbox image. A failure in that check means sandboxing is not
+ready; do not bypass it by running OpenClaw as root.
+
 On the workstation, create an SSH tunnel and leave it running:
 
 ```sh

@@ -289,7 +289,10 @@ repository.
 Open `http://127.0.0.1:18789` after the tunnel is established. Upgrade by changing
 reviewed pins, running `make check`, then `make diff` and `make provision`.
 Hardware verification checks service health and inspects any existing sandbox
-containers for obvious isolation regressions.
+containers for obvious isolation regressions. Provisioning installs Docker
+Engine, the Docker CLI, Buildx, and Compose from Docker's official Debian
+repository, enables the daemon, and verifies daemon and plugin access as the
+unprivileged `openclaw` service account before building the sandbox image.
 
 Backups run with systemd. Initialize/backup with `make backup`; check the backend
 using `make backup-check` in a protected environment. Retention uses daily,

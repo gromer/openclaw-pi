@@ -48,3 +48,13 @@
     name: docker
     enabled: true
     state: started
+- name: Verify Docker sandbox tooling as the OpenClaw service account
+  ansible.builtin.command:
+    argv: "{{ item }}"
+  loop:
+    - [docker, version]
+    - [docker, buildx, version]
+    - [docker, compose, version]
+  become: true
+  become_user: "{{ openclaw_user }}"
+  changed_when: false

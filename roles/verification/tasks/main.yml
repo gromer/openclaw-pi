@@ -6,6 +6,12 @@
     that:
       - ansible_facts.services['docker.service'].state == 'running'
       - ansible_facts.services['openclaw.service'].state == 'running'
+- name: Verify OpenClaw can access the Docker sandbox backend
+  ansible.builtin.command:
+    argv: [docker, version]
+  become: true
+  become_user: "{{ openclaw_user }}"
+  changed_when: false
 - name: Verify gateway loopback health
   ansible.builtin.uri:
     url: "http://127.0.0.1:{{ openclaw_gateway_port }}/health"
