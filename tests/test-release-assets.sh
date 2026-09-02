@@ -48,4 +48,7 @@ if grep -F 'git clone' "$test_root/bundled-bootstrap.sh" >/dev/null; then
   echo "release bundle bootstrap unexpectedly requires Git" >&2
   exit 1
 fi
+mkdir "$test_root/extracted"
+tar -xzf "$archive" -C "$test_root/extracted"
+python3 "$test_root/extracted/openclaw-pi-${tag}/tests/test_static.py"
 echo "release assets: ok"
