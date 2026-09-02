@@ -51,6 +51,8 @@ assert "setup_{{ node_major }}.x" not in openclaw_tasks, "NodeSource setup scrip
 assert "openclaw_npm_integrity_actual.stdout == openclaw_npm_integrity" in openclaw_tasks
 assert "openclaw_nodesource_key_fingerprint not in openclaw_nodesource_key_info.stdout" in openclaw_tasks
 assert "docker_apt_key_fingerprint not in docker_key_info.stdout" in docker_tasks
+assert "--homedir" in docker_tasks, "Docker key verification must not depend on root's home"
+assert "--homedir" in openclaw_tasks, "NodeSource key verification must not depend on root's home"
 assert "[docker, version]" in docker_tasks, "Docker daemon access must be verified"
 assert "[docker, buildx, version]" in docker_tasks, "Docker Buildx must be verified"
 assert "[docker, compose, version]" in docker_tasks, "Docker Compose must be verified"
