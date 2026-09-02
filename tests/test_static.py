@@ -43,6 +43,11 @@ assert "setup_{{ node_major }}.x" not in openclaw_tasks, "NodeSource setup scrip
 assert "openclaw_npm_integrity_actual.stdout == openclaw_npm_integrity" in openclaw_tasks
 assert "openclaw_nodesource_key_fingerprint not in openclaw_nodesource_key_info.stdout" in openclaw_tasks
 assert "docker_apt_key_fingerprint not in docker_key_info.stdout" in docker_tasks
+assert "[docker, version]" in docker_tasks, "Docker daemon access must be verified"
+assert "[docker, buildx, version]" in docker_tasks, "Docker Buildx must be verified"
+assert "[docker, compose, version]" in docker_tasks, "Docker Compose must be verified"
+assert 'become_user: "{{ openclaw_user }}"' in docker_tasks, \
+    "Docker access must be verified as the OpenClaw account"
 
 jinja_env = jinja2.Environment(undefined=jinja2.StrictUndefined)
 jinja_env.filters["to_json"] = json.dumps
