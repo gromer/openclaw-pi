@@ -327,6 +327,7 @@ Enter this YAML using the two generated values:
 ```yaml
 gateway_token: "REPLACE_WITH_FIRST_RANDOM_VALUE"
 searxng_secret_key: "REPLACE_WITH_SECOND_RANDOM_VALUE"
+openrouter_api_key: "" # Paste an OpenRouter API key to enable the picker entry.
 ```
 
 Save and exit. Confirm that SOPS metadata and encrypted values exist without
@@ -445,6 +446,8 @@ without changing the file.
 - Configure Restic before relying on the Pi for irreplaceable workspace or
   session state.
 - Test an OpenClaw request and confirm it uses the expected Ollama model.
+- If `openrouter_api_key` is configured, confirm OpenRouter Auto (Beta) appears
+  in the model picker and can complete a test request.
 - Confirm a sandbox container has network mode `none`, a read-only root, and no
   Docker socket mount.
 - Record the installed release with `readlink -f /opt/openclaw-pi/current`.

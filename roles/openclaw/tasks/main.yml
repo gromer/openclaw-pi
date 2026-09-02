@@ -159,6 +159,7 @@
     that:
       - not (openclaw_secrets.gateway_token | default('') | regex_search('[\r\n]'))
       - not (openclaw_secrets.inference_api_key | default('') | regex_search('[\r\n]'))
+      - not (openclaw_secrets.openrouter_api_key | default('') | regex_search('[\r\n]'))
     fail_msg: "OpenClaw secrets must not contain raw newline characters."
   no_log: true
 - name: Validate OpenClaw string inventory values
@@ -168,6 +169,8 @@
       - inference_base_url is string
       - inference_model is string
       - openclaw_provider_id is string
+      - openrouter_model_ref is string
+      - openrouter_model_name is string
       - openclaw_workspace_dir is string
       - sandbox_mode is string
       - sandbox_scope is string
@@ -207,6 +210,7 @@
         OPENCLAW_CONFIG_PATH: "{{ openclaw_config_candidate.path }}"
         OPENCLAW_GATEWAY_TOKEN: validation-placeholder-token
         INFERENCE_API_KEY: validation-placeholder-key
+        OPENROUTER_API_KEY: validation-placeholder-key
       changed_when: false
     - name: Install validated OpenClaw configuration
       ansible.builtin.copy:

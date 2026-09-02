@@ -238,7 +238,7 @@ EOF
   gateway_token=$(openssl rand -hex 32)
   searxng_secret_key=$(openssl rand -hex 32)
   encrypted_tmp=$TEMP_DIR/secrets.sops.yml
-  printf 'gateway_token: "%s"\nsearxng_secret_key: "%s"\ninference_api_key: ""\nrestic_password: ""\nrestic_environment: ""\n' \
+  printf 'gateway_token: "%s"\nsearxng_secret_key: "%s"\ninference_api_key: ""\nopenrouter_api_key: ""\nrestic_password: ""\nrestic_environment: ""\n' \
     "$gateway_token" "$searxng_secret_key" |
     SOPS_AGE_KEY_FILE=$AGE_KEY_FILE sops --encrypt --age "$age_recipient" \
       --input-type yaml --output-type yaml /dev/stdin > "$encrypted_tmp"

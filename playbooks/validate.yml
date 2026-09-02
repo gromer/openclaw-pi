@@ -13,6 +13,7 @@
       - inference_backend in ['ollama', 'mlx_openai']
       - inference_base_url is match('^https?://')
       - inference_backend != 'mlx_openai' or inference_base_url is match('.*/v1/?$')
+      - inference_backend != 'mlx_openai' or openclaw_provider_id != 'openrouter'
       - inference_host | length > 0
       - inference_model | length > 0
       - openclaw_npm_integrity is match('^sha512-[A-Za-z0-9+/]+=*$')

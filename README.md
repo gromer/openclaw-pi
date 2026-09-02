@@ -77,7 +77,8 @@ Authoritative references consulted August 26, 2026:
 - [configuration reference](https://docs.openclaw.ai/gateway/configuration-reference),
   [custom providers](https://docs.openclaw.ai/gateway/config-tools),
   [Ollama](https://docs.openclaw.ai/providers/ollama), and
-  [local/MLX endpoints](https://docs.openclaw.ai/gateway/local-models)
+  [local/MLX endpoints](https://docs.openclaw.ai/gateway/local-models), and
+  [OpenRouter](https://docs.openclaw.ai/providers/openrouter)
 - [workspace contract](https://docs.openclaw.ai/agent-workspace) and
   [Docker sandboxing](https://docs.openclaw.ai/gateway/sandboxing)
 - [Docker Engine on Debian](https://docs.docker.com/engine/install/debian/)
@@ -156,6 +157,7 @@ Inside the encrypted file create:
 gateway_token: "a randomly generated value of at least 32 characters"
 searxng_secret_key: "a distinct random value of at least 32 characters"
 inference_api_key: "optional token required by the MLX endpoint"
+openrouter_api_key: "optional OpenRouter API key"
 restic_password: "a strong randomly generated Restic password"
 restic_environment: "optional backend variables, one NAME=value per line"
 ```
@@ -255,6 +257,10 @@ implements `/v1/models` and `/v1/chat/completions`. Bind it to the LAN address,
 require a token where supported, and restrict the port to the Pi. Set
 `inference_backend: mlx_openai`, a base ending in `/v1`, its exact advertised
 model ID, and `inference_api_key` in SOPS. Never expose either service publicly.
+OpenRouter is registered alongside the selected local inference backend. Add
+`openrouter_api_key` to the encrypted SOPS file to use
+`openrouter/auto-beta`; the explicit catalog and allowlist entries
+keep OpenRouter Auto (Beta) visible in OpenClaw's chat and `/model` pickers.
 Current role wiring keeps provider secrets in a root-owned systemd
 `EnvironmentFile`; OpenClaw SecretRefs/systemd credentials were evaluated but are
 not configured here because upstream provider auth still expects environment
