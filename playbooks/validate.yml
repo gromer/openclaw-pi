@@ -21,7 +21,9 @@
       - docker_apt_key_fingerprint is match('^[A-F0-9]{40}$')
       - sandbox_network == 'none'
       - sandbox_workspace_access in ['none', 'ro']
-      - openclaw_gateway_bind == 'loopback'
+      - openclaw_gateway_bind in ['loopback', 'lan']
+      - openclaw_gateway_bind != 'lan' or security_gateway_allowed_cidrs | length > 0
+      - openclaw_gateway_bind != 'lan' or openclaw_control_ui_allowed_origins | length > 0
       - secrets_file | length > 0
       - not restic_enabled or (restic_repository | length > 0 and secrets_file | length > 0)
       - searxng_bind_address in ['127.0.0.1', '::1', 'localhost'] or searxng_allow_lan_exposure | bool

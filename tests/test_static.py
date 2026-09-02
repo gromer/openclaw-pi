@@ -13,12 +13,15 @@ compose = (ROOT / "roles/searxng/templates/compose.yml.j2").read_text()
 sandbox_dockerfile = (ROOT / "roles/sandbox/files/Dockerfile").read_text()
 openclaw_tasks = (ROOT / "roles/openclaw/tasks/main.yml").read_text()
 docker_tasks = (ROOT / "roles/docker/tasks/main.yml").read_text()
+security_tasks = (ROOT / "roles/security/tasks/main.yml").read_text()
+example_inventory = (ROOT / "inventories/example/group_vars/all.yml").read_text()
 bootstrap = (ROOT / "bootstrap.sh").read_text()
 installer = (ROOT / "install.sh").read_text()
 release_workflow = (ROOT / ".github/workflows/release.yml").read_text()
 assert '"network":{{ sandbox_network | to_json }}' in config
 assert '"capDrop":["ALL"]' in config
 assert '"readOnlyRoot":true' in config
+assert '"allowedOrigins":{{ openclaw_control_ui_allowed_origins | to_json }}' in config
 assert "| replace('\\\\', '\\\\\\\\') | replace('\"', '\\\\\"') }}" in environment
 assert "SupplementaryGroups=docker" in unit
 assert "NoNewPrivileges=true" in unit
@@ -48,6 +51,9 @@ assert "[docker, buildx, version]" in docker_tasks, "Docker Buildx must be verif
 assert "[docker, compose, version]" in docker_tasks, "Docker Compose must be verified"
 assert 'become_user: "{{ openclaw_user }}"' in docker_tasks, \
     "Docker access must be verified as the OpenClaw account"
+assert "openclaw_gateway_bind: lan" in example_inventory
+assert "security_gateway_allowed_cidrs:" in example_inventory
+assert "to any port {{ openclaw_gateway_port }}" in security_tasks
 
 jinja_env = jinja2.Environment(undefined=jinja2.StrictUndefined)
 jinja_env.filters["to_json"] = json.dumps
@@ -55,6 +61,7 @@ jinja_env.filters["to_json"] = json.dumps
 shared = {
     "openclaw_gateway_bind": "127.0.0.1",
     "openclaw_gateway_port": 18789,
+    "openclaw_control_ui_allowed_origins": ["http://192.0.2.10:18789"],
     "inference_base_url": "http://localhost:11434/v1 with space",
     "inference_timeout_seconds": 300,
     "inference_model": 'model "quoted" \\ and spaced',

@@ -166,6 +166,7 @@
   ansible.builtin.assert:
     that:
       - openclaw_gateway_bind is string
+      - openclaw_control_ui_allowed_origins is sequence
       - inference_base_url is string
       - inference_model is string
       - openclaw_provider_id is string
@@ -180,6 +181,13 @@
       - sandbox_memory is string
       - sandbox_memory_swap is string
     fail_msg: "OpenClaw string settings must be strings in inventory/group vars."
+- name: Validate Control UI allowed origins
+  ansible.builtin.assert:
+    that:
+      - item is string
+      - item is match('^https?://[A-Za-z0-9._:-]+$')
+    fail_msg: "Control UI origin is not a valid HTTP(S) origin: {{ item | to_json }}."
+  loop: "{{ openclaw_control_ui_allowed_origins }}"
 - name: Install protected environment
   ansible.builtin.template:
     src: environment.j2

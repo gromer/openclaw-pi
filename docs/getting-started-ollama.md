@@ -254,7 +254,12 @@ openclaw_state_dir: /var/lib/openclaw
 openclaw_workspace_dir: /var/lib/openclaw/workspace
 openclaw_config_path: /etc/openclaw/openclaw.json
 openclaw_gateway_port: 18789
-openclaw_gateway_bind: loopback
+openclaw_gateway_bind: lan
+openclaw_control_ui_allowed_origins:
+  - "http://{{ ansible_default_ipv4.address }}:{{ openclaw_gateway_port }}"
+  - "http://{{ pi_hostname }}.local:{{ openclaw_gateway_port }}"
+security_gateway_allowed_cidrs:
+  - "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}"
 node_major: "24"
 
 inference_backend: ollama
@@ -426,14 +431,11 @@ Docker daemon, Buildx, and Compose as the `openclaw` service account before it
 builds the agent sandbox image. A failure in that check means sandboxing is not
 ready; do not bypass it by running OpenClaw as root.
 
-On the workstation, create an SSH tunnel and leave it running:
-
-```sh
-ssh -N -L 18789:127.0.0.1:18789 piadmin@REPLACE_PI_IP
-```
-
-Open `http://127.0.0.1:18789` in the workstation browser. Retrieve the gateway
-token by opening the encrypted file through SOPS on the Pi:
+From an allowed LAN client, open `http://openclaw-pi.local:18789` (or the exact
+IP-based origin generated in the inventory). The gateway is token-authenticated,
+and UFW limits access to the Pi's directly connected LAN by default. Do not add
+an internet router port-forward for port 18789. Retrieve the gateway token by
+opening the encrypted file through SOPS on the Pi:
 
 ```sh
 sudo env \

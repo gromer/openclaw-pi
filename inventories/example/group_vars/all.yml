@@ -19,7 +19,12 @@ openclaw_state_dir: /var/lib/openclaw
 openclaw_workspace_dir: /var/lib/openclaw/workspace
 openclaw_config_path: /etc/openclaw/openclaw.json
 openclaw_gateway_port: 18789
-openclaw_gateway_bind: loopback
+openclaw_gateway_bind: lan
+openclaw_control_ui_allowed_origins:
+  - "http://{{ ansible_default_ipv4.address }}:{{ openclaw_gateway_port }}"
+  - "http://{{ pi_hostname }}.local:{{ openclaw_gateway_port }}"
+security_gateway_allowed_cidrs:
+  - "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}"
 node_major: "24"
 inference_backend: ollama
 inference_host: mac-inference.local
