@@ -24,6 +24,10 @@
   ansible.builtin.uri:
     url: "http://127.0.0.1:{{ searxng_port }}/healthz"
     status_code: 200
+  register: verification_searxng_health
+  retries: 12
+  delay: 5
+  until: verification_searxng_health.status == 200
 - name: Inspect running sandbox containers
   ansible.builtin.command: docker ps --filter name=openclaw-sbx- --format "{{ '{{' }}.ID{{ '}}' }}"
   register: verification_sandbox_containers
