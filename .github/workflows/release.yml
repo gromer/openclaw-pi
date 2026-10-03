@@ -16,27 +16,62 @@ jobs:
   assets:
     runs-on: ubuntu-24.04
     environment: release
+    # Match RELEASE_TAG across push, dispatch (including tag refs), and reruns.
+    concurrency:
+      group: release-assets-${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+      cancel-in-progress: false
     env:
       RELEASE_TAG: "${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: "${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
+          ref: "refs/tags/${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}"
           fetch-depth: 0
       - name: Validate release tag
         run: |
           case "$RELEASE_TAG" in
-            *[!A-Za-z0-9._-]*|'')
+            *[!A-Za-z0-9._-]*|-*|'')
               echo "ERROR: invalid release tag $RELEASE_TAG" >&2
               exit 1
               ;;
           esac
-          object_type=$(git for-each-ref --format='%(objecttype)' "refs/tags/$RELEASE_TAG")
-          [ -n "$object_type" ] || { echo "ERROR: tag $RELEASE_TAG not found" >&2; exit 1; }
+          tag_ref="refs/tags/$RELEASE_TAG"
+          git check-ref-format "$tag_ref"
+          tag_object=$(git show-ref --verify --hash "$tag_ref")
+          object_type=$(git cat-file -t "$tag_object")
           [ "$object_type" = "tag" ] || {
-            echo "ERROR: lightweight tags are rejected; create an annotated signed tag" >&2
+            echo "ERROR: lightweight tags are rejected; create an annotated tag (signature not verified)" >&2
             exit 1
           }
+          tag_commit=$(git rev-parse --verify "${tag_ref}^{commit}")
+          source_commit=$(git rev-parse --verify 'HEAD^{commit}')
+          [ "$source_commit" = "$tag_commit" ] || {
+            echo "ERROR: checked-out source does not match tag $RELEASE_TAG" >&2
+            exit 1
+          }
+          printf 'RELEASE_COMMIT=%s\n' "$tag_commit" >> "$GITHUB_ENV"
+      - name: Validate release source
+        run: |
+          shellcheck bootstrap.sh install.sh scripts/*.sh tests/*.sh
+          sh -n bootstrap.sh install.sh scripts/*.sh tests/*.sh
+      - name: Build deterministic release bundle
+        run: scripts/build-release-assets.sh "$RELEASE_TAG" dist
+      - name: Verify release artifact identity
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          with open("dist/release-manifest.json", encoding="utf-8") as source:
+              manifest = json.load(source)
+          expected = {
+              "release": os.environ["RELEASE_TAG"],
+              "commit": os.environ["RELEASE_COMMIT"],
+              "archive": f"openclaw-pi-{os.environ['RELEASE_TAG']}.tar.gz",
+          }
+          if any(manifest.get(key) != value for key, value in expected.items()):
+              raise SystemExit("ERROR: release artifact does not match validated tag/source")
+          PY
       - name: Prepare draft release
         env:
           GH_TOKEN: "${{ github.token }}"
@@ -49,12 +84,6 @@ jobs:
             gh release delete "$RELEASE_TAG" --yes
           fi
           gh release create "$RELEASE_TAG" --draft --verify-tag --title "$RELEASE_TAG"
-      - name: Validate release source
-        run: |
-          shellcheck bootstrap.sh install.sh scripts/*.sh tests/*.sh
-          sh -n bootstrap.sh install.sh scripts/*.sh tests/*.sh
-      - name: Build deterministic release bundle
-        run: scripts/build-release-assets.sh "$RELEASE_TAG" dist
       - name: Upload release assets
         env:
           GH_TOKEN: "${{ github.token }}"

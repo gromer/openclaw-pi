@@ -28,6 +28,28 @@ tests, examples, and documentation. It excludes GitHub workflow metadata and all
 untracked production data. The manifest identifies the tag, source commit,
 archive name, and archive SHA-256.
 
+Release publishing requires an existing annotated tag. The workflow checks out
+the full tag ref, compares its peeled commit with HEAD, and checks the built
+manifest's tag, commit, and archive name before changing any release state.
+Annotation is required; tag signatures are not verified. Lightweight tags and
+source mismatches are rejected.
+
+The complete release job uses a per-tag concurrency group with cancellation
+disabled. Pushes, manual dispatches, and reruns targeting the same tag serialize;
+different tags can proceed independently (case-distinct names share a group).
+An existing draft is deleted and recreated after a successful build so failed
+uploads can be recovered by a rerun. An already-published release is rejected
+without deletion or replacement. Manual dispatch on a tag ref selects that ref's
+tag; dispatch on a branch selects the supplied tag input.
+
+Use a workflow definition containing these checks for release execution. New
+release tags must contain the fixed definition; do not rerun historical runs or
+dispatch stale branches alongside it. Actions concurrency does not cover older
+definitions or manual/API writers. Before recovery, inspect run status and the
+release's draft/published state; rebuild only an incomplete draft using the fixed
+workflow. Never delete a published release for recovery. Workflow rollback is a
+reviewed revert, which restores the previous race and identity limitations.
+
 ## Guided installation from the latest release
 
 Use this route for a fresh Pi with SSH already enabled and an Ollama server
