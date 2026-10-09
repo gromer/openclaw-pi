@@ -2,7 +2,16 @@
 - name: Check whether OpenClaw configuration already exists
   ansible.builtin.stat:
     path: "{{ openclaw_config_path }}"
+    follow: false
   register: openclaw_config_existing
+- name: Reject ambiguous OpenClaw configuration paths
+  ansible.builtin.assert:
+    that:
+      - not openclaw_config_existing.stat.exists or openclaw_config_existing.stat.isreg
+      - not openclaw_config_existing.stat.islnk
+    fail_msg: >-
+      {{ openclaw_config_path }} exists but is not a regular file. Refusing to
+      follow or replace a symlink or other manually managed path.
 - name: Render and validate first-install OpenClaw configuration
   when: not openclaw_config_existing.stat.exists
   block:

@@ -56,6 +56,8 @@ assert 'gateway_token=$(openssl rand' not in installer
 assert 'gateway-token.json' in installer
 assert "openclaw_installed.stdout | trim != openclaw_version" in openclaw_tasks
 assert "when: not openclaw_config_existing.stat.exists" in openclaw_config_tasks
+assert "follow: false" in openclaw_config_tasks
+assert "Refusing to" in openclaw_config_tasks
 assert "config validate" in openclaw_config_tasks
 assert 'OPENCLAW_CONFIG_PATH: "{{ openclaw_config_candidate.path }}"' in openclaw_config_tasks
 assert "force: false" in openclaw_workspace_tasks

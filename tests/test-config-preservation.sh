@@ -69,4 +69,15 @@ OPENCLAW_PRESERVATION_TEST_ROOT=$test_root \
   ansible-playbook -i localhost, tests/config-preservation.yml
 snapshot > "$test_root.after"
 cmp "$test_root.before" "$test_root.after"
+
+mkdir -p "$test_root/symlink-case/.openclaw"
+printf '%s\n' 'manually managed target fixture' > "$test_root/symlink-case/config-target.json"
+ln -s missing-target.json "$test_root/symlink-case/.openclaw/openclaw.json"
+if OPENCLAW_PRESERVATION_TEST_ROOT="$test_root/symlink-case" \
+  ansible-playbook -i localhost, tests/config-preservation.yml >/dev/null 2>&1; then
+  echo "configuration seeding accepted a symlink path" >&2
+  exit 1
+fi
+[ -L "$test_root/symlink-case/.openclaw/openclaw.json" ]
+[ "$(cat "$test_root/symlink-case/config-target.json")" = 'manually managed target fixture' ]
 echo "existing config and runtime fixture preservation: ok"
