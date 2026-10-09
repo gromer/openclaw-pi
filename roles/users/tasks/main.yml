@@ -9,8 +9,7 @@
 - name: Create OpenClaw service group
   ansible.builtin.group:
     name: "{{ openclaw_group }}"
-    system: true
-  when: openclaw_group != openclaw_user
+    system: "{{ openclaw_group != openclaw_user }}"
 - name: Create administrator SSH directory
   ansible.builtin.file:
     path: "/home/{{ admin_user }}/.ssh"
@@ -33,7 +32,6 @@
     shell: /bin/bash
     home: "{{ openclaw_home_dir }}"
     create_home: true
-    groups: "{{ admin_groups | join(',') }}"
     append: true
 - name: Create OpenClaw directories
   ansible.builtin.file:

@@ -8,7 +8,10 @@ Restart=always
 RestartSec=5s
 UMask=0077
 NoNewPrivileges=true
-PrivateTmp=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
 {% if firecrawl_secret_enabled %}EnvironmentFile={{ firecrawl_environment_path }}
 {% endif %}
 [Install]

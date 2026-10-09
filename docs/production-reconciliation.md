@@ -44,6 +44,61 @@ state, and process environment were not read. No files or services on the Pi
 were changed. Current full-state backup availability and restore readiness
 remain unverified.
 
+## systemd user-service security tradeoffs
+
+The previous system unit ran under an explicit `User=`, `Group=`, and
+`SupplementaryGroups=docker`; it also used `ProtectSystem=strict`,
+`ProtectHome=true`, `ReadWritePaths=`, `PrivateDevices=`, kernel protections,
+`ProtectControlGroups=`, `ProtectClock=`, `RestrictSUIDSGID=`,
+`LockPersonality=`, `RestrictRealtime=`, and
+`SystemCallArchitectures=native`. It ordered itself after network-online and
+Docker and required `docker.service`.
+
+The per-user manager already runs services as its own user. systemd does not
+support `User=` or `Group=` to switch identities in that manager; the user
+manager also cannot supply a new `SupplementaryGroups=` list to this unit.
+Cross-manager dependencies on system units do not provide the old ordering or
+requirement. The playbook therefore enables lingering, starts the unit under
+the same user, and validates Docker access and gateway health separately.
+
+On Debian 13, filesystem and device namespace protections such as
+`ProtectSystem=`, `ProtectHome=`, `ReadWritePaths=`, `PrivateDevices=`, and
+`PrivateTmp=` require `PrivateUsers=true` for a user service, which in turn
+requires unprivileged user namespace support. `ProtectHome=true` would hide the
+home directory containing the executable, config, state, and secret files.
+`ProtectSystem=strict` plus a narrow writable exception would require testing
+all OpenClaw state and sandbox workflows. User namespaces could also affect
+Docker socket group access. The current unit does not enable those namespaces;
+`PrivateTmp=true` was removed because it was not effective without them.
+`ProtectControlGroups=` is documented as unsupported for per-user units.
+See the [Debian 13 systemd.exec manual](https://manpages.debian.org/trixie/systemd/systemd.exec.5.en.html)
+for the per-user manager constraints.
+
+The user unit retains `NoNewPrivileges=true` and `UMask=0077`. The prior
+`LockPersonality=true`, `RestrictRealtime=true`, `RestrictSUIDSGID=true`, and
+`SystemCallArchitectures=native` are also retained: Debian 13 documents these
+as available to user units, and they do not change the unit's filesystem,
+network, identity, or Docker socket view. This preserves the existing narrow
+process restrictions without requiring user namespaces. Runtime compatibility
+still requires the separate-card validation; static unit parsing does not
+prove every plugin or helper's behavior.
+
+The service runs as `gromer`, whose home includes private user data. In the example
+inventory, `gromer` is also the administrator and is granted `sudo` plus the
+Docker group. Docker socket access is host-administration-equivalent; the
+systemd user service does not create a privilege boundary from that account.
+This is an explicit architecture tradeoff to reproduce the working production
+model. Keep the service account's supplementary groups limited to existing
+account memberships plus Docker; the user-creation role no longer grants the
+administrator's group list to a separate service account.
+
+An already-running user manager does not inherit supplementary group changes
+made later. The verification now checks `docker` membership from a transient
+unit launched by that manager. If that check fails after provisioning, reboot
+the separate test host and rerun provisioning/verification before relying on
+Docker-backed agent sandboxes. No reboot or service change was made on
+production.
+
 ## Base installation on a separate microSD card
 
 Base installation means a working OpenClaw 2026.9.6 gateway with the intended
@@ -81,17 +136,21 @@ policy. It does not restore the production agent fleet or integrations.
    service runs as `gromer`; it uses the normal `~/.openclaw` state/config
    paths. Network and Docker are managed by system services. The user unit has
    no cross-manager `Requires=` ordering; the playbook checks Docker access
-   and Gateway health after startup.
+   from the user manager and checks Gateway health after startup.
 6. Run `make check`, `make diff`, `make provision`, and `make verify`. Confirm
    `loginctl show-user gromer -p Linger`, the user unit's active/enabled state,
    `openclaw config validate`, Gateway health, Docker access, and the sandbox
-   checks. A separate-card test is required for ARM64 packages, systemd user
-   manager behavior, firewall reachability, and boot persistence.
+   checks. If Docker group access fails in the user manager after provisioning,
+   reboot the separate test host and rerun provisioning and verification so
+   the lingering manager starts with the updated group list. A separate-card
+   test is required for ARM64 packages, systemd user manager behavior, firewall
+   reachability, and boot persistence.
 
 The guided installer skips its unauthenticated `/api/tags` check for
 `https://ollama.gromer.dev`; that Caddy route requires the protected file-backed
-token. Confirm the selected model in inventory and validate provider
-connectivity after startup without printing credentials.
+token. The provisioning playbook also skips its unauthenticated endpoint
+preflight for this protected route. Confirm the selected model in inventory;
+Gateway health does not prove authenticated provider inference.
 
 The installer expects an OS user named by `admin_user` and requires the gateway
 token file to exist with owner/mode checks before provisioning. It does not
@@ -169,10 +228,14 @@ FIRECRAWL_API_KEY=<paste in editor>
 
 The file must be regular, non-symlinked, owned by `gromer:gromer`, and mode
 0600; its parent directory is 0700. systemd parses `NAME=value` lines itself;
-it does not run a shell or expand shell substitutions ([systemd.exec](https://manpages.debian.org/unstable/systemd/systemd.exec.5.en.html)). The value is added to
-the Gateway unit's process environment and inherited by its child processes;
-keep this file limited to the single allowed Firecrawl variable. Do not use
-command arguments or shell history to enter the key.
+it does not run a shell or expand shell substitutions ([systemd.exec](https://manpages.debian.org/trixie/systemd/systemd.exec.5.en.html)). The value is added to
+the Gateway unit's process environment and inherited by its child processes.
+The systemd manual cautions that environment variables are not secure secret
+storage and may be exposed through manager D-Bus interfaces; this is an
+accepted limitation of the plugin's supported environment mechanism. Keep the
+file limited to the single allowed Firecrawl variable and restrict access to
+the service account and root. Do not use command arguments or shell history to
+enter the key.
 
 For a future authorized apply, set `firecrawl_secret_enabled: true` in the
 protected provisioning inventory. The role installs a user-service drop-in at

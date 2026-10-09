@@ -1,0 +1,20 @@
+---
+- name: Verify existing OpenClaw state is preserved by role tasks
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    openclaw_config_path: "{{ lookup('env', 'OPENCLAW_PRESERVATION_TEST_ROOT') }}/.openclaw/openclaw.json"
+    openclaw_workspace_dir: "{{ lookup('env', 'OPENCLAW_PRESERVATION_TEST_ROOT') }}/.openclaw/workspace"
+    openclaw_user: "{{ lookup('pipe', 'id -un') }}"
+    openclaw_group: "{{ lookup('pipe', 'id -gn') }}"
+  tasks:
+    - name: Run the same config seeding tasks used by provisioning
+      ansible.builtin.include_role:
+        name: openclaw
+        tasks_from: configuration.yml
+    - name: Run the same initial workspace tasks used by provisioning
+      ansible.builtin.include_role:
+        name: openclaw
+        tasks_from: workspaces.yml

@@ -1,0 +1,10 @@
+---
+- name: Install managed workspace files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ openclaw_workspace_dir }}/{{ item }}"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
+    mode: '0600'
+    force: false
+  loop: [AGENTS.md, SOUL.md, TOOLS.md]

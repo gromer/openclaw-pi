@@ -13,6 +13,9 @@ firecrawl_dropin = (ROOT / "roles/openclaw/templates/firecrawl-env.conf.j2").rea
 compose = (ROOT / "roles/searxng/templates/compose.yml.j2").read_text()
 sandbox_dockerfile = (ROOT / "roles/sandbox/files/Dockerfile").read_text()
 openclaw_tasks = (ROOT / "roles/openclaw/tasks/main.yml").read_text()
+openclaw_config_tasks = (ROOT / "roles/openclaw/tasks/configuration.yml").read_text()
+openclaw_workspace_tasks = (ROOT / "roles/openclaw/tasks/workspaces.yml").read_text()
+user_tasks = (ROOT / "roles/users/tasks/main.yml").read_text()
 docker_tasks = (ROOT / "roles/docker/tasks/main.yml").read_text()
 security_tasks = (ROOT / "roles/security/tasks/main.yml").read_text()
 example_inventory = (ROOT / "inventories/example/group_vars/all.yml").read_text()
@@ -30,6 +33,11 @@ assert 'OPENCLAW_GATEWAY_TOKEN' not in environment
 assert "Restart=always" in unit
 assert "WantedBy=default.target" in unit
 assert "NoNewPrivileges=true" in unit
+assert "LockPersonality=true" in unit
+assert "RestrictRealtime=true" in unit
+assert "RestrictSUIDSGID=true" in unit
+assert "SystemCallArchitectures=native" in unit
+assert "PrivateTmp=true" not in unit
 assert "EnvironmentFile={{ firecrawl_environment_path }}" in firecrawl_dropin
 assert '"{{ searxng_bind_address }}:{{ searxng_port }}:8080"' in compose
 assert "git clone" not in bootstrap
@@ -46,7 +54,23 @@ assert "SOPS_AGE_KEY_FILE" in installer
 assert "ansible_connection: local" in installer
 assert 'gateway_token=$(openssl rand' not in installer
 assert 'gateway-token.json' in installer
-assert "when: not openclaw_config_existing.stat.exists" in openclaw_tasks
+assert "openclaw_installed.stdout | trim != openclaw_version" in openclaw_tasks
+assert "when: not openclaw_config_existing.stat.exists" in openclaw_config_tasks
+assert "config validate" in openclaw_config_tasks
+assert 'OPENCLAW_CONFIG_PATH: "{{ openclaw_config_candidate.path }}"' in openclaw_config_tasks
+assert "force: false" in openclaw_workspace_tasks
+assert "groups: \"{{ admin_groups | join(',') }}\"" not in user_tasks.split(
+    "- name: Create OpenClaw service account", 1
+)[1].split("- name: Create OpenClaw directories", 1)[0]
+service_group_task = user_tasks.split("- name: Create OpenClaw service group", 1)[1].split(
+    "- name: Create administrator SSH directory", 1
+)[0]
+assert "name: \"{{ openclaw_group }}\"" in service_group_task
+assert "when:" not in service_group_task
+assert "inference_base_url == 'https://ollama.gromer.dev'" in openclaw_tasks
+assert "verification_user_manager_groups.stdout.split()" in (
+    ROOT / "roles/verification/tasks/main.yml"
+).read_text()
 assert "/etc/systemd/system/openclaw.service" not in openclaw_tasks
 
 release_workflow_path = ROOT / ".github/workflows/release.yml"
