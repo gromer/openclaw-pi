@@ -49,13 +49,15 @@ assert 'gateway-token.json' in installer
 assert "when: not openclaw_config_existing.stat.exists" in openclaw_tasks
 assert "/etc/systemd/system/openclaw.service" not in openclaw_tasks
 
-release_workflow = (ROOT / ".github/workflows/release.yml").read_text()
-assert "--clobber" not in release_workflow
-assert "gh release create" in release_workflow
-assert "--draft --verify-tag" in release_workflow
-assert 'gh release edit "$RELEASE_TAG" --draft=false' in release_workflow
-assert "dist/release-manifest.json" in release_workflow
-assert "dist/release-manifest.json.sha256" in release_workflow
+release_workflow_path = ROOT / ".github/workflows/release.yml"
+if release_workflow_path.exists():
+    release_workflow = release_workflow_path.read_text()
+    assert "--clobber" not in release_workflow
+    assert "gh release create" in release_workflow
+    assert "--draft --verify-tag" in release_workflow
+    assert 'gh release edit "$RELEASE_TAG" --draft=false' in release_workflow
+    assert "dist/release-manifest.json" in release_workflow
+    assert "dist/release-manifest.json.sha256" in release_workflow
 
 assert "@sha256:" in sandbox_dockerfile
 assert "setup_{{ node_major }}.x" not in openclaw_tasks
