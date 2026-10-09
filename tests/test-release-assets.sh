@@ -51,4 +51,5 @@ fi
 mkdir "$test_root/extracted"
 tar -xzf "$archive" -C "$test_root/extracted"
 python3 "$test_root/extracted/openclaw-pi-${tag}/tests/test_static.py"
+sh "$test_root/extracted/openclaw-pi-${tag}/tests/test-config-preservation.sh"
 echo "release assets: ok"

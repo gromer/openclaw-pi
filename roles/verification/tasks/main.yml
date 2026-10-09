@@ -1,11 +1,43 @@
 ---
-- name: Gather service facts
-  ansible.builtin.service_facts:
-- name: Verify required services
+- name: Read OpenClaw user numeric id
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ openclaw_user }}"
+- name: Define OpenClaw user manager bus environment
+  ansible.builtin.set_fact:
+    verification_openclaw_user_manager_environment:
+      XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts.getent_passwd[openclaw_user][1] }}"
+      DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_facts.getent_passwd[openclaw_user][1] }}/bus"
+- name: Check OpenClaw user service state
+  ansible.builtin.command:
+    argv: [systemctl, --user, show, openclaw-gateway.service, -p, ActiveState, -p, UnitFileState, --no-pager]
+  become: true
+  become_user: "{{ openclaw_user }}"
+  environment: "{{ verification_openclaw_user_manager_environment }}"
+  register: verification_openclaw_service
+  changed_when: false
+- name: Verify OpenClaw user service is active and enabled
   ansible.builtin.assert:
     that:
-      - ansible_facts.services['docker.service'].state == 'running'
-      - ansible_facts.services['openclaw.service'].state == 'running'
+      - "'ActiveState=active' in verification_openclaw_service.stdout_lines"
+      - "'UnitFileState=enabled' in verification_openclaw_service.stdout_lines"
+- name: Read supplementary groups from the OpenClaw user manager
+  ansible.builtin.command:
+    argv: [systemd-run, --user, --wait, --pipe, --collect, /usr/bin/id, -Gn]
+  become: true
+  become_user: "{{ openclaw_user }}"
+  environment: "{{ verification_openclaw_user_manager_environment }}"
+  register: verification_user_manager_groups
+  changed_when: false
+- name: Require Docker group access in the OpenClaw user manager
+  ansible.builtin.assert:
+    that:
+      - "'docker' in verification_user_manager_groups.stdout.split()"
+    fail_msg: >-
+      The running OpenClaw user manager does not have Docker group access.
+      Group changes do not update an already-running user manager. Reboot the
+      host and rerun provisioning and verification before relying on Docker
+      agent sandboxes.
 - name: Verify OpenClaw can access the Docker sandbox backend
   ansible.builtin.command:
     argv: [docker, version]

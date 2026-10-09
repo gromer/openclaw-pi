@@ -161,11 +161,16 @@ if [ "$existing" -eq 0 ]; then
   inference_host=${ollama_url#*://}
   inference_host=${inference_host%%:*}
 
-  curl --fail --silent --show-error --max-time 10 "$ollama_url/api/tags" \
-    --output "$TEMP_DIR/ollama-tags.json" || {
-      echo "ERROR: the Pi cannot reach $ollama_url/api/tags" >&2
-      exit 1
-    }
+  if [ "$ollama_url" = "https://ollama.gromer.dev" ]; then
+    echo "Skipping unauthenticated model-catalog probe for the protected Ollama route."
+    echo "The configured model will be validated through OpenClaw after provisioning."
+  else
+    curl --fail --silent --show-error --max-time 10 "$ollama_url/api/tags" \
+      --output "$TEMP_DIR/ollama-tags.json" || {
+        echo "ERROR: the Pi cannot reach $ollama_url/api/tags" >&2
+        exit 1
+      }
+  fi
   printf 'Ollama model (exact name and tag): ' >/dev/tty
   IFS= read -r ollama_model </dev/tty
   case "$ollama_model" in
@@ -175,12 +180,14 @@ if [ "$existing" -eq 0 ]; then
   export DEBIAN_FRONTEND=noninteractive
   apt-get update
   apt-get install -y --no-install-recommends age ca-certificates jq openssl
-  jq --exit-status --arg model "$ollama_model" \
-    '.models[] | select(.name == $model or .model == $model)' \
-    "$TEMP_DIR/ollama-tags.json" >/dev/null || {
-      echo "ERROR: Ollama does not advertise model $ollama_model" >&2
-      exit 1
-    }
+  if [ "$ollama_url" != "https://ollama.gromer.dev" ]; then
+    jq --exit-status --arg model "$ollama_model" \
+      '.models[] | select(.name == $model or .model == $model)' \
+      "$TEMP_DIR/ollama-tags.json" >/dev/null || {
+        echo "ERROR: Ollama does not advertise model $ollama_model" >&2
+        exit 1
+      }
+  fi
 
   sops_binary="sops-v${SOPS_VERSION}.linux.arm64"
   sops_url="https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}"
@@ -219,6 +226,8 @@ EOF
     -v secrets="$SECRETS_FILE" '
       /^pi_hostname:/ { print "pi_hostname: " hostname; next }
       /^admin_user:/ { print "admin_user: " admin; next }
+      /^openclaw_user:/ { print "openclaw_user: " admin; next }
+      /^openclaw_group:/ { print "openclaw_group: " admin; next }
       /^admin_ssh_public_keys:/ {
         print
         print "  - \"" key "\""
@@ -235,14 +244,13 @@ EOF
       { print }
     ' "$DEST_ROOT/current/inventories/example/group_vars/all.yml" > "$ALL_FILE"
 
-  gateway_token=$(openssl rand -hex 32)
   searxng_secret_key=$(openssl rand -hex 32)
   encrypted_tmp=$TEMP_DIR/secrets.sops.yml
-  printf 'gateway_token: "%s"\nsearxng_secret_key: "%s"\ninference_api_key: ""\nopenrouter_api_key: ""\nrestic_password: ""\nrestic_environment: ""\n' \
-    "$gateway_token" "$searxng_secret_key" |
+  printf 'searxng_secret_key: "%s"\ninference_api_key: ""\nopenrouter_api_key: ""\nrestic_password: ""\nrestic_environment: ""\n' \
+    "$searxng_secret_key" |
     SOPS_AGE_KEY_FILE=$AGE_KEY_FILE sops --encrypt --age "$age_recipient" \
       --input-type yaml --output-type yaml /dev/stdin > "$encrypted_tmp"
-  unset gateway_token searxng_secret_key
+  unset searxng_secret_key
   install -o root -g root -m 0600 "$encrypted_tmp" "$SECRETS_FILE"
   chmod 0600 "$HOSTS_FILE" "$ALL_FILE" "$SECRETS_FILE"
 
@@ -261,6 +269,14 @@ else
   admin_user=${admin_user:-${SUDO_USER:-root}}
 fi
 
+gateway_token_file="/home/$admin_user/.config/openclaw/secrets/gateway-token.json"
+if [ ! -f "$gateway_token_file" ] || [ -L "$gateway_token_file" ] ||
+  [ "$(stat -c '%U:%a' "$gateway_token_file")" != "$admin_user:600" ]; then
+  echo "ERROR: manually provision $gateway_token_file from your credential vault" >&2
+  echo "       owner must be $admin_user and mode must be 0600; file contents were not checked" >&2
+  exit 1
+fi
+
 SOPS_AGE_KEY_FILE=$AGE_KEY_FILE \
 OPENCLAW_PI_RELEASE=$RELEASE \
 OPENCLAW_PI_REPOSITORY=$REPOSITORY \
@@ -271,5 +287,5 @@ OPENCLAW_PI_INVENTORY=$HOSTS_FILE \
 echo
 echo "Installation complete from $RELEASE."
 echo "Inventory: $INVENTORY_DIR"
-echo "Verify: systemctl status openclaw docker --no-pager"
+echo "Verify the user service with: systemctl --user status openclaw-gateway.service"
 echo "Dashboard: http://$(hostname).local:18789 (from the allowed LAN)"

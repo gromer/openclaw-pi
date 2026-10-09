@@ -1,5 +1,5 @@
 ---
-security_ssh_port: 22
+security_ssh_port: 2222
 security_ssh_allow_users: ["{{ admin_user }}"]
 # Optional list of CIDR ranges allowed to reach the SSH port.
 # When empty (default), SSH is permitted from any source address.

@@ -1,0 +1,52 @@
+---
+- name: Check whether OpenClaw configuration already exists
+  ansible.builtin.stat:
+    path: "{{ openclaw_config_path }}"
+    follow: false
+  register: openclaw_config_existing
+- name: Reject ambiguous OpenClaw configuration paths
+  ansible.builtin.assert:
+    that:
+      - not openclaw_config_existing.stat.exists or openclaw_config_existing.stat.isreg
+      - not openclaw_config_existing.stat.islnk
+    fail_msg: >-
+      {{ openclaw_config_path }} exists but is not a regular file. Refusing to
+      follow or replace a symlink or other manually managed path.
+- name: Render and validate first-install OpenClaw configuration
+  when: not openclaw_config_existing.stat.exists
+  block:
+    - name: Create temporary OpenClaw configuration file
+      ansible.builtin.tempfile:
+        state: file
+        path: "{{ openclaw_config_path | dirname }}"
+        suffix: .json
+      register: openclaw_config_candidate
+    - name: Render OpenClaw configuration candidate
+      ansible.builtin.template:
+        src: openclaw.json.j2
+        dest: "{{ openclaw_config_candidate.path }}"
+        owner: "{{ openclaw_user }}"
+        group: "{{ openclaw_group }}"
+        mode: '0600'
+    - name: Validate OpenClaw configuration candidate
+      ansible.builtin.command: "{{ openclaw_npm_prefix }}/bin/openclaw config validate"
+      environment:
+        OPENCLAW_CONFIG_PATH: "{{ openclaw_config_candidate.path }}"
+        INFERENCE_API_KEY: validation-placeholder-key
+        OPENROUTER_API_KEY: validation-placeholder-key
+      changed_when: false
+    - name: Install validated OpenClaw configuration
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ openclaw_config_candidate.path }}"
+        dest: "{{ openclaw_config_path }}"
+        owner: "{{ openclaw_user }}"
+        group: "{{ openclaw_group }}"
+        mode: '0600'
+      notify: Restart OpenClaw
+  always:
+    - name: Remove temporary OpenClaw configuration candidate
+      ansible.builtin.file:
+        path: "{{ openclaw_config_candidate.path }}"
+        state: absent
+      when: openclaw_config_candidate.path is defined

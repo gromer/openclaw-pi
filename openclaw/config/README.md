@@ -1,6 +1,7 @@
 # Managed configuration
 
-Ansible renders the verified JSON configuration from
-`roles/openclaw/templates/openclaw.json.j2`. Do not place rendered configuration
-or credentials here; the deployed file is `/etc/openclaw/openclaw.json`.
+The first-install gateway seed lives in `roles/openclaw/templates/`. Do not
+place rendered configuration or credentials here. The deployed application
+config is `/home/gromer/.openclaw/openclaw.json`; Ansible does not replace it
+after creation.
 
