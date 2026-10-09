@@ -1,14 +1,15 @@
 # OpenClaw Raspberry Pi 5 gateway
 
 Reproducible Ansible provisioning for a 64-bit Raspberry Pi OS Raspberry Pi 5.
-OpenClaw runs as an unprivileged host systemd service, Docker runs isolated tool
+OpenClaw runs as a systemd user service under `gromer`, Docker runs isolated tool
 sandboxes, Compose runs loopback-only SearXNG, and inference remains on an M4 Pro
 Mac over the LAN.
 
 ## Quick install
 
-On an updated Raspberry Pi 5 running 64-bit Raspberry Pi OS, enable SSH and make
-sure the Pi can reach an Ollama server over the LAN. Then run:
+On a Raspberry Pi 5 running 64-bit Raspberry Pi OS (Debian 13/Trixie), enable
+SSH on port 2222, create the `gromer` account, provision the protected gateway
+token file manually, and confirm Ollama reachability. Then run:
 
 ```sh
 curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/install.sh | sudo sh
@@ -17,8 +18,10 @@ curl -fsSL https://github.com/gromer/openclaw-pi/releases/latest/download/instal
 The guided installer selects the latest published release, pins it to that
 release tag, verifies the bootstrap and Ansible bundle checksums, reuses an
 existing SSH public key, and prompts for the Ollama URL and exact model. It
-generates the age identity and encrypted service secrets locally. Back up the
-age identity securely as soon as installation finishes.
+requires a manually provisioned gateway token file and never generates or
+rotates that token. It generates the age identity and encrypted service
+secrets locally. Back up the age identity securely as soon as installation
+finishes.
 
 This convenience command executes network-delivered code as root before you can
 inspect or independently verify the installer. For production, use the
@@ -41,17 +44,18 @@ LAN segments should connect. Every URL used to open the dashboard must also
 appear in `openclaw_control_ui_allowed_origins`; the example inventory derives
 the Pi's current IPv4 URL and adds its `.local` hostname.
 
-**Critical limitation:** OpenClaw's verified Docker backend invokes the Docker
-CLI and therefore the `openclaw` account is in the Docker group. Docker daemon
-authority is effectively root authority on the Pi. The sandbox containers never
-receive the socket, but a compromised gateway process could control Docker. This
-is the closest supported host-gateway design; use a separate sandbox host/backend
-if that trust is unacceptable. SearXNG is intentionally unavailable inside
+**Critical limitation:** The production-matching `gromer` account is an SSH
+administrator and belongs to the Docker group. Docker daemon authority is
+effectively root authority on the Pi, so a compromised Gateway process has
+host-administration-equivalent authority. The sandbox containers never receive
+the socket. Use a separate sandbox host/backend if that trust is unacceptable.
+SearXNG is intentionally unavailable inside
 network-disabled tool sandboxes; host-integrated tools can reach it.
 
-Git-managed configuration is reconstructible. `/var/lib/openclaw` contains
-private mutable workspace, SQLite state, sessions, and credentials and is the
-default Restic backup selection. Never commit that tree.
+Git-managed provisioning is reconstructible. `/home/gromer/.openclaw` contains
+private mutable workspace, SQLite state, sessions, plugin state, and config.
+It is the intended Restic selection when Restic is explicitly configured. Never
+commit that tree or the files under `~/.config/openclaw/secrets`.
 
 ## Repository map
 
@@ -73,9 +77,9 @@ default Restic backup selection. Never commit that tree.
 ## Supported platform and verified upstream contract
 
 The target is current 64-bit Raspberry Pi OS (Debian-family) on Pi 5. OpenClaw
-2026.7.1 is the committed example pin. Node 24 is selected because current
-OpenClaw supports Node 24.15+ (Node 26 is recommended upstream). Review and update
-pins deliberately before production.
+2026.9.6 is the committed example pin, with npm registry integrity. Node 24 is
+selected for this release. Review and update pins deliberately before
+provisioning.
 
 Authoritative references consulted August 26, 2026:
 
@@ -96,10 +100,11 @@ Authoritative references consulted August 26, 2026:
   [age](https://age-encryption.org/), and
   [Restic documentation](https://restic.readthedocs.io/en/stable/)
 
-OpenClaw configuration is JSON (valid JSON5), at `/etc/openclaw/openclaw.json`.
-The MLX path uses the documented `openai-completions` adapter and `/v1`; Ollama
-uses its native `ollama` adapter. The exact authored provider base URL is the LAN
-origin trusted by OpenClaw's guarded fetch path.
+OpenClaw configuration is JSON (valid JSON5), at
+`/home/gromer/.openclaw/openclaw.json`. Provisioning seeds a minimal gateway
+config only if the file is absent; runtime agent, channel, provider, and plugin
+configuration remains application state. See
+[production reconciliation and recovery](docs/production-reconciliation.md).
 
 ## Initial setup
 
@@ -162,7 +167,6 @@ file for the run and remove it afterward.
 Inside the encrypted file create:
 
 ```yaml
-gateway_token: "a randomly generated value of at least 32 characters"
 searxng_secret_key: "a distinct random value of at least 32 characters"
 inference_api_key: "optional token required by the MLX endpoint"
 openrouter_api_key: "optional OpenRouter API key"
@@ -269,10 +273,10 @@ OpenRouter is registered alongside the selected local inference backend. Add
 `openrouter_api_key` to the encrypted SOPS file to use
 `openrouter/auto-beta`; the explicit catalog and allowlist entries
 keep OpenRouter Auto (Beta) visible in OpenClaw's chat and `/model` pickers.
-Current role wiring keeps provider secrets in a root-owned systemd
-`EnvironmentFile`; OpenClaw SecretRefs/systemd credentials were evaluated but are
-not configured here because upstream provider auth still expects environment
-variables.
+Provider credentials that use an environment variable remain in the protected
+user-service environment. Gateway authentication uses a manually provisioned
+file-backed SecretRef. See the [credential migration runbook](docs/production-reconciliation.md)
+for the supported Firecrawl environment-backed SecretRef and manual procedure.
 
 ## Operations
 
@@ -300,14 +304,17 @@ The `openclaw` CLI is installed at `/usr/local/bin/openclaw`; use
 Hardware verification checks service health and inspects any existing sandbox
 containers for obvious isolation regressions. Provisioning installs Docker
 Engine, the Docker CLI, Buildx, and Compose from Docker's official Debian
-repository, enables the daemon, and verifies daemon and plugin access as the
-unprivileged `openclaw` service account before building the sandbox image.
+repository, enables the daemon, and verifies daemon and plugin access as
+`gromer` before building the sandbox image.
 
 Backups run with systemd. Initialize/backup with `make backup`; check the backend
 using `make backup-check` in a protected environment. Retention uses daily,
 weekly, and monthly policy variables and prunes only after a successful backup.
 Repository checks sample data weekly. Investigate timer failures and verify
 freshness within `restic_max_backup_age_hours`.
+When enabled, a backup briefly stops the Gateway through the `gromer` user
+manager while it snapshots `~/.openclaw`, then starts it again. A missing or
+unreachable user unit makes the backup fail closed.
 
 Restore is intentionally controller-side and refuses `latest` or a non-empty
 target without confirmation:
@@ -338,7 +345,7 @@ The provisioning supply chain is verified at each boundary: NodeSource and
 Docker repository keys are checked against their documented fingerprints, and
 the OpenClaw tarball is downloaded with lifecycle scripts disabled, hashed, and
 compared with the inventory's npm `dist.integrity` value before installation as
-the unprivileged service user. The sandbox Dockerfile pins the Debian
+the `gromer` service user. The sandbox Dockerfile pins the Debian
 bookworm-slim multi-architecture index by digest. NodeSource's repository key is
 pinned to its current fingerprint (`6F71F525282841EEDAF851B42F59B5F99B1BE0B4`).
 Review these pins deliberately when upgrading: obtain the new NodeSource/Docker

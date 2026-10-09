@@ -11,5 +11,8 @@ secrets.plain.yaml
 *.agekey
 age-identity.txt
 .env
+*.env
+gateway-token.json
+ollama-caddy-token.json
 compose/searxng/.env
 /dist/

@@ -6,18 +6,26 @@ pi_static_gateway: ""
 pi_dns_servers: []
 pi_manage_network: false
 pi_network_connection: "Wired connection 1"
-admin_user: piadmin
+admin_user: gromer
 admin_groups: [sudo]
 admin_ssh_public_keys:
   - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXAMPLEONLYNOTAKEY replace@example
-openclaw_user: openclaw
-openclaw_group: openclaw
-openclaw_version: "2026.7.1"
-# Verify this npm dist.integrity value against the signed registry metadata before changing it.
-openclaw_npm_integrity: "sha512-ge/Xss99CHAjPL/ikmH/UFoiOrjcxDB4sW3y9mhyCD+dYW3wzV7TKbAVdkrXFgAG2d2BjpJofP97zUZ+umxo8g=="
-openclaw_state_dir: /var/lib/openclaw
-openclaw_workspace_dir: /var/lib/openclaw/workspace
-openclaw_config_path: /etc/openclaw/openclaw.json
+openclaw_user: gromer
+openclaw_group: gromer
+openclaw_version: "2026.9.6"
+# Verify against npm registry dist.integrity metadata before release.
+openclaw_npm_integrity: "sha512-Ie0kyQSCVfFqixsgVg39vevUDq01Ch5u3+7Yu5Y3qARczmdAe+lzp8bVnO9925rHiW/+CFp70zfORCyPmCH31g=="
+openclaw_home_dir: "/home/{{ openclaw_user }}"
+openclaw_npm_prefix: "{{ openclaw_home_dir }}/.npm-global"
+openclaw_state_dir: "{{ openclaw_home_dir }}/.openclaw"
+openclaw_workspace_dir: "{{ openclaw_state_dir }}/workspace"
+openclaw_config_path: "{{ openclaw_state_dir }}/openclaw.json"
+openclaw_secret_dir: "{{ openclaw_home_dir }}/.config/openclaw/secrets"
+openclaw_gateway_token_file: "{{ openclaw_secret_dir }}/gateway-token.json"
+ollama_token_file: "{{ openclaw_secret_dir }}/ollama-caddy-token.json"
+openclaw_environment_path: "{{ openclaw_secret_dir }}/openclaw.env"
+firecrawl_secret_enabled: false
+firecrawl_environment_path: "{{ openclaw_secret_dir }}/firecrawl.env"
 openclaw_gateway_port: 18789
 openclaw_gateway_bind: lan
 openclaw_control_ui_allowed_origins:
@@ -27,9 +35,9 @@ security_gateway_allowed_cidrs:
   - "{{ ansible_default_ipv4.network }}/{{ ansible_default_ipv4.netmask }}"
 node_major: "24"
 inference_backend: ollama
-inference_host: mac-inference.local
-inference_base_url: http://mac-inference.local:11434
-inference_model: qwen3.5:27b
+inference_host: ollama.gromer.dev
+inference_base_url: https://ollama.gromer.dev
+inference_model: gemma4:26b-mlx
 inference_context_window: 32768
 inference_max_tokens: 8192
 inference_timeout_seconds: 300
@@ -55,7 +63,7 @@ searxng_allow_lan_exposure: false
 restic_enabled: false
 restic_repository: ""
 restic_backup_paths:
-  - /var/lib/openclaw
+  - "{{ openclaw_state_dir }}"
 restic_schedule: "*-*-* 03:30:00"
 restic_keep_daily: 7
 restic_keep_weekly: 5
@@ -63,5 +71,3 @@ restic_keep_monthly: 12
 restic_check_schedule: "Sun *-*-* 04:30:00"
 restic_max_backup_age_hours: 36
 restic_freshness_schedule: "*-*-* 06:00:00"
-restic_sqlite_paths:
-  - /var/lib/openclaw/openclaw.db

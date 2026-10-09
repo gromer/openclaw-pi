@@ -10,6 +10,7 @@
   ansible.builtin.group:
     name: "{{ openclaw_group }}"
     system: true
+  when: openclaw_group != openclaw_user
 - name: Create administrator SSH directory
   ansible.builtin.file:
     path: "/home/{{ admin_user }}/.ssh"
@@ -28,10 +29,12 @@
   ansible.builtin.user:
     name: "{{ openclaw_user }}"
     group: "{{ openclaw_group }}"
-    system: true
-    shell: /usr/sbin/nologin
-    home: "{{ openclaw_state_dir }}"
+    system: false
+    shell: /bin/bash
+    home: "{{ openclaw_home_dir }}"
     create_home: true
+    groups: "{{ admin_groups | join(',') }}"
+    append: true
 - name: Create OpenClaw directories
   ansible.builtin.file:
     path: "{{ item.path }}"
@@ -40,6 +43,10 @@
     group: "{{ item.group }}"
     mode: "{{ item.mode }}"
   loop:
-    - {path: /etc/openclaw, owner: root, group: "{{ openclaw_group }}", mode: '0750'}
+    - {path: "{{ openclaw_secret_dir }}", owner: "{{ openclaw_user }}", group: "{{ openclaw_group }}", mode: '0700'}
     - {path: "{{ openclaw_state_dir }}", owner: "{{ openclaw_user }}", group: "{{ openclaw_group }}", mode: '0700'}
     - {path: "{{ openclaw_workspace_dir }}", owner: "{{ openclaw_user }}", group: "{{ openclaw_group }}", mode: '0700'}
+- name: Enable OpenClaw user manager at boot
+  ansible.builtin.command:
+    argv: [loginctl, enable-linger, "{{ openclaw_user }}"]
+  changed_when: false

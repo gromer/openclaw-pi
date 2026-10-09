@@ -20,22 +20,37 @@ elif [ "$restic_exit" -ne 0 ]; then
   echo "ERROR: restic snapshots failed with exit code $restic_exit - resolve before backing up" >&2
   exit 1
 fi
-{% if restic_sqlite_paths %}
 # Quiesce OpenClaw so SQLite WAL is flushed before snapshotting.
 service_was_active=0
-if systemctl is-active --quiet {{ restic_openclaw_service | quote }}; then
+gateway_systemctl() {
+  runuser -u {{ restic_openclaw_user | quote }} -- env \
+    XDG_RUNTIME_DIR={{ ("/run/user/" ~ ansible_facts.getent_passwd[restic_openclaw_user][1]) | quote }} \
+    DBUS_SESSION_BUS_ADDRESS={{ ("unix:path=/run/user/" ~ ansible_facts.getent_passwd[restic_openclaw_user][1] ~ "/bus") | quote }} \
+    systemctl --user "$@"
+}
+gateway_load_state=$(gateway_systemctl show {{ restic_openclaw_service | quote }} --property=LoadState --value)
+[ "$gateway_load_state" = loaded ] || {
+  echo "ERROR: OpenClaw user unit is not loaded; refusing an unquiesced snapshot" >&2
+  exit 1
+}
+gateway_active_state=$(gateway_systemctl show {{ restic_openclaw_service | quote }} --property=ActiveState --value)
+case "$gateway_active_state" in
+active)
   service_was_active=1
-  systemctl stop {{ restic_openclaw_service | quote }}
+  gateway_systemctl stop {{ restic_openclaw_service | quote }}
   # Restart the service regardless of backup outcome.
-  trap 'systemctl start {{ restic_openclaw_service | quote }} || true' EXIT HUP INT TERM
-fi
-{% endif %}
+  trap 'gateway_systemctl start {{ restic_openclaw_service | quote }} || true' EXIT HUP INT TERM
+  ;;
+inactive|failed) ;;
+*)
+  echo "ERROR: OpenClaw user unit state is $gateway_active_state; refusing an unquiesced snapshot" >&2
+  exit 1
+  ;;
+esac
 restic backup{% for path in restic_backup_paths %} {{ path | quote }}{% endfor %} --tag openclaw-pi
-{% if restic_sqlite_paths %}
 if [ "$service_was_active" -eq 1 ]; then
   trap - EXIT HUP INT TERM
-  systemctl start {{ restic_openclaw_service | quote }}
+  gateway_systemctl start {{ restic_openclaw_service | quote }}
 fi
-{% endif %}
 restic forget --tag openclaw-pi --keep-daily {{ restic_keep_daily }} --keep-weekly {{ restic_keep_weekly }} --keep-monthly {{ restic_keep_monthly }} --prune
 

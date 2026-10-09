@@ -84,8 +84,9 @@ inferred, the Ollama URL, and the exact advertised model. It then:
 - independently verifies that tag's bootstrap and release-bundle checksums;
 - creates `/root/openclaw-inventory` with mode `0700` and files with mode `0600`;
 - installs the pinned SOPS binary after checking its upstream checksum;
-- generates a root-only age identity and SOPS-encrypted random service secrets;
-- tests Ollama reachability and confirms the model appears in `/api/tags`;
+- generates a root-only age identity and SOPS-encrypted random non-gateway secrets;
+- requires manually provisioned gateway and authenticated Ollama token files;
+- skips the unauthenticated `/api/tags` probe for the protected Ollama route;
 - provisions locally with Ansible and leaves Restic disabled until configured.
 
 Back up `/root/.config/sops/age/keys.txt` securely and separately from the

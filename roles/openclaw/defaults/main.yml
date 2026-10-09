@@ -1,6 +1,9 @@
 ---
-openclaw_npm_prefix: /opt/openclaw
-openclaw_environment_path: /etc/openclaw/environment
+openclaw_environment_path: "{{ openclaw_secret_dir }}/openclaw.env"
+openclaw_gateway_token_file: "{{ openclaw_secret_dir }}/gateway-token.json"
+ollama_token_file: "{{ openclaw_secret_dir }}/ollama-caddy-token.json"
+firecrawl_environment_path: "{{ openclaw_secret_dir }}/firecrawl.env"
+firecrawl_secret_enabled: false
 openclaw_provider_id: lan-mlx
 openclaw_control_ui_allowed_origins: []
 openrouter_model_ref: openrouter/auto-beta

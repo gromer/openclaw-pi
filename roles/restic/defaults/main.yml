@@ -1,6 +1,6 @@
 ---
 restic_environment_path: /etc/restic/openclaw.env
 restic_lock_path: /run/lock/openclaw-restic.lock
-restic_sqlite_paths: []
-restic_openclaw_service: openclaw
+restic_openclaw_service: openclaw-gateway.service
+restic_openclaw_user: "{{ openclaw_user }}"
 restic_freshness_schedule: "*-*-* 06:00:00"
