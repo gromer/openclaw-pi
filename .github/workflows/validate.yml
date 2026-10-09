@@ -20,7 +20,7 @@ jobs:
       - run: >-
           sh -n bootstrap.sh install.sh scripts/*.sh tests/*.sh &&
           shellcheck bootstrap.sh install.sh scripts/*.sh tests/*.sh
-      - run: yamllint .
+      - run: yamllint --strict .
       - run: ansible-playbook -i inventories/example/hosts.yml playbooks/site.yml --syntax-check
       - run: ansible-lint playbooks/site.yml
       - run: python3 scripts/validate-vars.py
