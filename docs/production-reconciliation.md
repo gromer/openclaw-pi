@@ -257,15 +257,24 @@ openclaw config set plugins.entries.firecrawl.config.webSearch.apiKey \
 openclaw config validate
 openclaw secrets reload
 openclaw secrets audit --check
+openclaw config set agents.entries.main.tools.alsoAllow \
+  --strict-json '["firecrawl_search","firecrawl_scrape"]'
+openclaw config set agents.entries.main.tools.sandbox.tools.alsoAllow \
+  --strict-json '["firecrawl"]'
+openclaw config validate
 ```
 
+The two agent tool names select only Firecrawl search and scrape for `main`;
+the sandbox plugin-ID allowance lets those selected tools pass the sandbox gate.
+Do not add this allowance to other agents without a separate scope decision.
 Restart the user service so systemd reads the new EnvironmentFile. Confirm the
-plugin remains loaded and perform one targeted Firecrawl validation using the
-existing integration only after that live query is separately authorized. The
-repository does not add a Firecrawl test query or change other plugin fields.
-If validation fails, restore the restricted config backup, remove the drop-in
-through the reviewed provisioning change, reload the user manager, and restart
-the service. Keep the key in Proton Pass; do not back it up in SOPS or Git.
+plugin remains loaded, inspect `openclaw sandbox explain --agent main --json`,
+and perform a targeted Firecrawl search and scrape after live requests are
+authorized. The repository does not store credentials. If validation fails,
+remove the two per-agent allowances, restore the restricted config backup,
+remove the drop-in through the reviewed provisioning change, reload the user
+manager, and restart the service. Keep the key in Proton Pass; do not back it
+up in SOPS or Git.
 
 ## Full environment recovery
 
