@@ -104,7 +104,18 @@
         },
         "prune": {"idleHours": 24, "maxAgeDays": 7}
       }
+    }{% if firecrawl_secret_enabled %},
+    "entries": {
+      "main": {
+        "tools": {
+          "alsoAllow": ["firecrawl_search", "firecrawl_scrape"],
+          "sandbox": {
+            "tools": {"alsoAllow": ["firecrawl"]}
+          }
+        }
+      }
     }
+    {% endif %}
   }{% if firecrawl_secret_enabled %},
   "plugins": {
     "entries": {

@@ -162,6 +162,13 @@ assert firecrawl["secrets"]["providers"]["firecrawl_env"] == {
 assert firecrawl["plugins"]["entries"]["firecrawl"]["config"]["webSearch"]["apiKey"] == {
     "source": "env", "provider": "firecrawl_env", "id": "FIRECRAWL_API_KEY"
 }
+assert firecrawl["agents"]["entries"]["main"]["tools"]["alsoAllow"] == [
+    "firecrawl_search", "firecrawl_scrape"
+]
+assert firecrawl["agents"]["entries"]["main"]["tools"]["sandbox"]["tools"]["alsoAllow"] == [
+    "firecrawl"
+]
+assert "entries" not in seed["agents"]
 
 env_rendered = jinja_env.from_string(environment).render(
     {"openclaw_secrets": {
