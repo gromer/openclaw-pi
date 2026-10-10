@@ -1,4 +1,5 @@
 # Reference only; Ansible renders the deployed Compose file from the role template.
+---
 services:
   searxng:
     image: >-
